@@ -69,13 +69,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                String workspaceRoleClaim = claims.get("workspaceRole", String.class);
+                String planClaim = claims.get("plan", String.class);
+
                 var principal = new UsuarioAutenticado(
                         userId,
                         claims.get("email", String.class),
                         claims.get("name", String.class),
                         claims.get("workspaceId", String.class),
-                        Role.valueOf(claims.get("workspaceRole", String.class)),
-                        Plan.valueOf(claims.get("plan", String.class))
+                        workspaceRoleClaim != null ? Role.valueOf(workspaceRoleClaim) : null,
+                        planClaim != null ? Plan.valueOf(planClaim) : null
                 );
 
                 var auth = new UsernamePasswordAuthenticationToken(

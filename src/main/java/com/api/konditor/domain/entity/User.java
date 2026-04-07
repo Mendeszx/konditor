@@ -20,8 +20,6 @@ public class User {
     private String email;
     private String name;
     private String googleId;
-    private String avatarUrl;
-    private String phone;
     private String locale;
     private Instant createdAt;
     private Instant updatedAt;

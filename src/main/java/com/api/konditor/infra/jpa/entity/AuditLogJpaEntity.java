@@ -3,6 +3,8 @@ package com.api.konditor.infra.jpa.entity;
 import com.api.konditor.domain.enuns.AuditOperation;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -44,12 +46,15 @@ public class AuditLogJpaEntity {
     @Column(nullable = false)
     private AuditOperation operation;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "data_before", columnDefinition = "jsonb")
     private String dataBefore;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "data_after", columnDefinition = "jsonb")
     private String dataAfter;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "changed_fields", columnDefinition = "jsonb")
     private String changedFields;
 

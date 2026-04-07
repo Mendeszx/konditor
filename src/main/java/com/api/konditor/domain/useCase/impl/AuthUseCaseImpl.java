@@ -78,6 +78,21 @@ public class AuthUseCaseImpl implements AuthUseCase {
         UserJpaEntity usuario = upsertUsuario(dadosGoogle);
         log.info("[AUTH] Usuário autenticado id={} email={}", usuario.getId(), usuario.getEmail());
 
+        // Usuário novo (sem workspace) → token de onboarding, workspace null no response
+        if (!possuiWorkspaceAtivo(usuario)) {
+            log.info("[AUTH] Usuário id={} sem workspace ativo — emitindo token de onboarding", usuario.getId());
+            String tokenOnboarding = jwtService.gerarTokenOnboarding(usuario);
+            RefreshTokenJpaEntity refreshToken = criarRefreshToken(usuario);
+            adicionarCookie(response, refreshToken);
+            return new GoogleAuthResponse(
+                    tokenOnboarding,
+                    "Bearer",
+                    jwtService.getExpiracaoEmSegundos(),
+                    new DadosUsuarioResponse(usuario.getId().toString(), usuario.getName(), usuario.getEmail()),
+                    null
+            );
+        }
+
         WorkspaceContext ctx = resolverWorkspace(usuario);
 
         Role role = Role.valueOf(ctx.member().getRole().getName());
@@ -237,7 +252,6 @@ public class AuthUseCaseImpl implements AuthUseCase {
                 .map(existente -> {
                     existente.setEmail(dados.getEmail());
                     existente.setName(dados.getName());
-                    // updatedAt gerenciado pelo @PreUpdate da entidade
                     return existente;
                 })
                 .orElseGet(() -> {
@@ -248,6 +262,13 @@ public class AuthUseCaseImpl implements AuthUseCase {
                             .name(dados.getName())
                             .build());
                 });
+    }
+
+    /**
+     * Verifica se o usuário possui ao menos um workspace ativo (sem soft-delete).
+     */
+    private boolean possuiWorkspaceAtivo(UserJpaEntity usuario) {
+        return !workspaceRepository.findAllByOwnerIdAndDeletedAtIsNull(usuario.getId()).isEmpty();
     }
 
     /**

@@ -66,6 +66,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Trata erros de onboarding (regras de negócio, idempotência, dados de seed ausentes).
+     */
+    @ExceptionHandler(OnboardingException.class)
+    public ProblemDetail handleOnboardingException(OnboardingException ex) {
+        log.warn("[EXCEPTION] Falha no onboarding: {}", ex.getMessage());
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.valueOf(422), ex.getMessage());
+        detail.setType(URI.create("https://konditor.api/errors/onboarding-failed"));
+        detail.setProperty("timestamp", Instant.now());
+        return detail;
+    }
+
+    /**
      * Trata qualquer exceção não mapeada — retorna 500 e loga o stack trace completo.
      */
     @ExceptionHandler(Exception.class)

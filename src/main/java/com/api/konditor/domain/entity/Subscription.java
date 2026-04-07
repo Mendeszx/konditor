@@ -1,5 +1,6 @@
 package com.api.konditor.domain.entity;
 
+import com.api.konditor.domain.enuns.Plan;
 import com.api.konditor.domain.enuns.SubscriptionStatus;
 import lombok.*;
 
@@ -19,6 +20,7 @@ public class Subscription {
     private UUID id;
     private Workspace workspace;
     private UUID planId;
+    private Plan plan;
     private SubscriptionStatus status;
     private Instant startedAt;
     private Instant endsAt;

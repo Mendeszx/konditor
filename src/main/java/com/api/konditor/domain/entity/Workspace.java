@@ -17,10 +17,8 @@ public class Workspace {
 
     private UUID id;
     private String name;
-    private String slug;
     private User owner;
     private UUID planId;
-    private String logoUrl;
     private String currency;
     private Instant createdAt;
     private Instant updatedAt;

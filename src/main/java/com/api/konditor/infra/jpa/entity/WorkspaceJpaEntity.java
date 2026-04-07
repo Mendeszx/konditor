@@ -26,9 +26,6 @@ public class WorkspaceJpaEntity {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true)
-    private String slug;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     private UserJpaEntity owner;
@@ -36,9 +33,6 @@ public class WorkspaceJpaEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plan_id", nullable = false)
     private PlanDetailsJpaEntity plan;
-
-    @Column(name = "logo_url")
-    private String logoUrl;
 
     @Column(nullable = false)
     private String currency;

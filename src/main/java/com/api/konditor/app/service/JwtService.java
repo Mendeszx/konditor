@@ -84,6 +84,29 @@ public class JwtService {
     }
 
     /**
+     * Gera um JWT de onboarding — contém apenas os dados do usuário, sem contexto de workspace.
+     *
+     * <p>Emitido quando o usuário faz login pela primeira vez e ainda não possui workspace.
+     * O frontend deve identificar a ausência das claims de workspace e redirecionar
+     * para o fluxo de onboarding ({@code POST /onboarding}).
+     *
+     * @param usuario entidade JPA do usuário recém-criado
+     * @return token JWT compacto assinado, sem claims de workspace
+     */
+    public String gerarTokenOnboarding(UserJpaEntity usuario) {
+        Instant agora = Instant.now();
+        return Jwts.builder()
+                .subject(String.valueOf(usuario.getId()))
+                .claim("email", usuario.getEmail())
+                .claim("name", usuario.getName())
+                .claim("onboarding", true)
+                .issuedAt(Date.from(agora))
+                .expiration(Date.from(agora.plusSeconds(expiracaoEmSegundos)))
+                .signWith(signingKey)
+                .compact();
+    }
+
+    /**
      * Valida e extrai as claims de um JWT.
      *
      * @param token JWT compacto recebido no header Authorization
