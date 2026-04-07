@@ -78,6 +78,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Trata erros de regras de negócio do dashboard (ex: usuário sem workspace).
+     */
+    @ExceptionHandler(DashboardException.class)
+    public ProblemDetail handleDashboardException(DashboardException ex) {
+        log.warn("[EXCEPTION] Falha no dashboard: {}", ex.getMessage());
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.valueOf(422), ex.getMessage());
+        detail.setType(URI.create("https://konditor.api/errors/dashboard-failed"));
+        detail.setProperty("timestamp", Instant.now());
+        return detail;
+    }
+
+    /**
      * Trata qualquer exceção não mapeada — retorna 500 e loga o stack trace completo.
      */
     @ExceptionHandler(Exception.class)
