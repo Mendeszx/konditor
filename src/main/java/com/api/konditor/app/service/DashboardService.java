@@ -3,6 +3,7 @@ package com.api.konditor.app.service;
 import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.response.DashboardStatsResponse;
 import com.api.konditor.app.controller.response.ReceitaCardResponse;
+import com.api.konditor.domain.enuns.RecipeStatus;
 import com.api.konditor.domain.useCase.DashboardUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,10 +29,8 @@ public class DashboardService {
         return dashboardUseCase.buscarEstatisticas(usuario);
     }
 
-    public List<ReceitaCardResponse> listarReceitas(UsuarioAutenticado usuario) {
-        log.debug("[DASHBOARD-SERVICE] Delegando listagem de receitas para use case. workspaceId={}",
-                usuario.workspaceId());
-        return dashboardUseCase.listarReceitas(usuario);
+    public List<ReceitaCardResponse> listarReceitas(UsuarioAutenticado usuario, RecipeStatus status) {
+        log.debug("[DASHBOARD-SERVICE] Delegando listagem de receitas status={} para use case. workspaceId={}", status, usuario.workspaceId());
+        return dashboardUseCase.listarReceitas(usuario, status);
     }
 }
-

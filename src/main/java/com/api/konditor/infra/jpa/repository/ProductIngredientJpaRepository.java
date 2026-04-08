@@ -2,6 +2,8 @@ package com.api.konditor.infra.jpa.repository;
 
 import com.api.konditor.infra.jpa.entity.ProductIngredientJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.UUID;
@@ -16,4 +18,18 @@ public interface ProductIngredientJpaRepository extends JpaRepository<ProductIng
     List<ProductIngredientJpaEntity> findAllByIngredientIdAndDeletedAtIsNull(UUID ingredientId);
 
     void deleteAllByProductId(UUID productId);
+
+    /**
+     * Busca todos os ingredientes de uma receita com ingrediente, unidade do ingrediente
+     * e unidade da receita já carregados (evita N+1).
+     */
+    @Query("""
+            SELECT pi FROM ProductIngredientJpaEntity pi
+            LEFT JOIN FETCH pi.ingredient i
+            LEFT JOIN FETCH i.unit
+            LEFT JOIN FETCH pi.unit
+            WHERE pi.product.id = :productId
+              AND pi.deletedAt IS NULL
+            """)
+    List<ProductIngredientJpaEntity> findAllByProductIdWithDetails(@Param("productId") UUID productId);
 }

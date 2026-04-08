@@ -1,5 +1,6 @@
 package com.api.konditor.app.controller.response;
 
+import com.api.konditor.domain.enuns.RecipeStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -85,5 +86,11 @@ public class ReceitaCardResponse {
      * Formato: {@code custos.html?id={id}}.
      */
     private String linkAnalise;
+
+    /**
+     * Status do ciclo de vida da receita: {@code publicada} ou {@code rascunho}.
+     * Presente para que o frontend possa diferenciar visualmente os cards.
+     */
+    private RecipeStatus status;
 }
 

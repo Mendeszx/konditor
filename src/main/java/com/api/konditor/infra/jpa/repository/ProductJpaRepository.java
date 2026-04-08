@@ -1,5 +1,6 @@
 package com.api.konditor.infra.jpa.repository;
 
+import com.api.konditor.domain.enuns.RecipeStatus;
 import com.api.konditor.infra.jpa.entity.ProductJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,14 +19,18 @@ public interface ProductJpaRepository extends JpaRepository<ProductJpaEntity, UU
 
     Optional<ProductJpaEntity> findByIdAndDeletedAtIsNull(UUID id);
 
+    Optional<ProductJpaEntity> findByIdAndWorkspaceIdAndDeletedAtIsNull(UUID id, UUID workspaceId);
+
     boolean existsByWorkspaceIdAndNameIgnoreCaseAndDeletedAtIsNull(UUID workspaceId, String name);
 
     /**
-     * Busca todos os produtos ativos do workspace com categoria e unidade de rendimento
+     * Busca todos os produtos publicados e ativos do workspace com categoria e unidade de rendimento
      * carregados em uma única query (evita N+1).
+     * Apenas receitas com {@code status = publicada} aparecem no dashboard.
      *
      * @param workspaceId ID do workspace (tenant)
-     * @return lista de produtos ativos com category e yieldUnit inicializados
+     * @param status      status desejado (normalmente {@code RecipeStatus.publicada})
+     * @return lista de produtos com category e yieldUnit inicializados
      */
     @Query("""
             SELECT p FROM ProductJpaEntity p
@@ -34,7 +39,11 @@ public interface ProductJpaRepository extends JpaRepository<ProductJpaEntity, UU
             WHERE p.workspace.id = :workspaceId
               AND p.deletedAt IS NULL
               AND p.isActive = true
+              AND p.status = :status
             ORDER BY p.name ASC
             """)
-    List<ProductJpaEntity> findAllActiveByWorkspaceIdWithDetails(@Param("workspaceId") UUID workspaceId);
+    List<ProductJpaEntity> findAllActiveByWorkspaceIdWithDetails(
+            @Param("workspaceId") UUID workspaceId,
+            @Param("status") RecipeStatus status
+    );
 }

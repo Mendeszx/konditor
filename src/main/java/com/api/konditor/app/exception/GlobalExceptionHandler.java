@@ -90,6 +90,19 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Trata erros de regras de negócio de receitas
+     * (ex: nome duplicado, ingrediente não encontrado, status inválido).
+     */
+    @ExceptionHandler(ReceitaException.class)
+    public ProblemDetail handleReceitaException(ReceitaException ex) {
+        log.warn("[EXCEPTION] Falha na operação de receita: {}", ex.getMessage());
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.valueOf(422), ex.getMessage());
+        detail.setType(URI.create("https://konditor.api/errors/receita-failed"));
+        detail.setProperty("timestamp", Instant.now());
+        return detail;
+    }
+
+    /**
      * Trata qualquer exceção não mapeada — retorna 500 e loga o stack trace completo.
      */
     @ExceptionHandler(Exception.class)

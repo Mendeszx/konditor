@@ -3,6 +3,7 @@ package com.api.konditor.domain.useCase;
 import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.response.DashboardStatsResponse;
 import com.api.konditor.app.controller.response.ReceitaCardResponse;
+import com.api.konditor.domain.enuns.RecipeStatus;
 
 import java.util.List;
 
@@ -24,12 +25,15 @@ public interface DashboardUseCase {
     DashboardStatsResponse buscarEstatisticas(UsuarioAutenticado usuario);
 
     /**
-     * Retorna a lista de receitas ativas do workspace formatadas para o grid do dashboard,
-     * incluindo cálculo de margem e status por receita.
+     * Retorna a lista de receitas do workspace formatadas para o grid do dashboard.
+     *
+     * <p>Por padrão retorna apenas receitas {@code publicada}.
+     * Passando {@code status = rascunho} permite visualizar os rascunhos em andamento.
      *
      * @param usuario principal autenticado extraído do JWT
-     * @return lista de cards de receita, ordenada por nome
+     * @param status  filtro de status — {@code publicada} (padrão) ou {@code rascunho}
+     * @return lista de cards de receita ordenada por nome
      */
-    List<ReceitaCardResponse> listarReceitas(UsuarioAutenticado usuario);
+    List<ReceitaCardResponse> listarReceitas(UsuarioAutenticado usuario, RecipeStatus status);
 }
 

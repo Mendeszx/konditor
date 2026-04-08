@@ -2,6 +2,8 @@ package com.api.konditor.infra.jpa.repository;
 
 import com.api.konditor.infra.jpa.entity.IngredientJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,5 +18,25 @@ public interface IngredientJpaRepository extends JpaRepository<IngredientJpaEnti
 
     Optional<IngredientJpaEntity> findByIdAndDeletedAtIsNull(UUID id);
 
+    Optional<IngredientJpaEntity> findByIdAndWorkspaceIdAndDeletedAtIsNull(UUID id, UUID workspaceId);
+
     boolean existsByWorkspaceIdAndNameIgnoreCaseAndDeletedAtIsNull(UUID workspaceId, String name);
+
+    /**
+     * Busca ingredientes do workspace cujo nome contém {@code query} (case-insensitive),
+     * com a unidade carregada via JOIN FETCH para evitar N+1.
+     * Passando {@code query = ""} retorna todos os ingredientes.
+     */
+    @Query("""
+            SELECT i FROM IngredientJpaEntity i
+            LEFT JOIN FETCH i.unit
+            WHERE i.workspace.id = :workspaceId
+              AND i.deletedAt IS NULL
+              AND LOWER(i.name) LIKE LOWER(CONCAT('%', :query, '%'))
+            ORDER BY i.name ASC
+            """)
+    List<IngredientJpaEntity> searchByWorkspaceAndName(
+            @Param("workspaceId") UUID workspaceId,
+            @Param("query") String query
+    );
 }

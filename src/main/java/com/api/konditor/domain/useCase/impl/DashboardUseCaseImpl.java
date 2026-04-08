@@ -5,6 +5,7 @@ import com.api.konditor.app.controller.response.DashboardStatsResponse;
 import com.api.konditor.app.controller.response.MelhorMargemResponse;
 import com.api.konditor.app.controller.response.ReceitaCardResponse;
 import com.api.konditor.app.exception.DashboardException;
+import com.api.konditor.domain.enuns.RecipeStatus;
 import com.api.konditor.domain.useCase.DashboardUseCase;
 import com.api.konditor.infra.jpa.entity.ProductCategoryJpaEntity;
 import com.api.konditor.infra.jpa.entity.ProductJpaEntity;
@@ -56,7 +57,7 @@ public class DashboardUseCaseImpl implements DashboardUseCase {
         UUID workspaceId = resolverWorkspaceId(usuario);
         log.info("[DASHBOARD-STATS] Buscando estatísticas para workspaceId={}", workspaceId);
 
-        List<ProductJpaEntity> receitas = productRepository.findAllActiveByWorkspaceIdWithDetails(workspaceId);
+        List<ProductJpaEntity> receitas = productRepository.findAllActiveByWorkspaceIdWithDetails(workspaceId, RecipeStatus.publicada);
 
         if (receitas.isEmpty()) {
             log.info("[DASHBOARD-STATS] Nenhuma receita ativa encontrada para workspaceId={}", workspaceId);
@@ -85,11 +86,11 @@ public class DashboardUseCaseImpl implements DashboardUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ReceitaCardResponse> listarReceitas(UsuarioAutenticado usuario) {
+    public List<ReceitaCardResponse> listarReceitas(UsuarioAutenticado usuario, RecipeStatus status) {
         UUID workspaceId = resolverWorkspaceId(usuario);
-        log.info("[DASHBOARD-RECEITAS] Listando receitas para workspaceId={}", workspaceId);
+        log.info("[DASHBOARD-RECEITAS] Listando receitas status={} — workspaceId={}", status, workspaceId);
 
-        List<ProductJpaEntity> receitas = productRepository.findAllActiveByWorkspaceIdWithDetails(workspaceId);
+        List<ProductJpaEntity> receitas = productRepository.findAllActiveByWorkspaceIdWithDetails(workspaceId, status);
 
         List<ReceitaCardResponse> cards = receitas.stream()
                 .map(this::montarCard)
@@ -123,7 +124,8 @@ public class DashboardUseCaseImpl implements DashboardUseCase {
                 produto.getSellingPrice().setScale(2, RoundingMode.HALF_UP),
                 margemInt,
                 margemStatus,
-                "custos.html?id=" + produto.getId()
+                "custos.html?id=" + produto.getId(),
+                produto.getStatus()
         );
     }
 

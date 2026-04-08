@@ -1,5 +1,6 @@
 package com.api.konditor.infra.jpa.entity;
 
+import com.api.konditor.domain.enuns.RecipeStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -67,6 +68,22 @@ public class ProductJpaEntity {
     @Column(name = "is_active", nullable = false)
     private boolean isActive;
 
+    /**
+     * Status do ciclo de vida da receita.
+     * {@code rascunho} = em edição (não aparece no dashboard).
+     * {@code publicada} = finalizada e visível em todas as listagens.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RecipeStatus status;
+
+    /**
+     * Preço de venda sugerido calculado pelo servidor com base no custo total
+     * e na margem padrão do workspace. Serve de referência para o usuário.
+     */
+    @Column(name = "suggested_price", precision = 19, scale = 2)
+    private BigDecimal suggestedPrice;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -88,6 +105,9 @@ public class ProductJpaEntity {
     void prePersist() {
         this.createdAt = Instant.now();
         this.isActive = true;
+        if (this.status == null) {
+            this.status = RecipeStatus.publicada;
+        }
     }
 
     @PreUpdate
