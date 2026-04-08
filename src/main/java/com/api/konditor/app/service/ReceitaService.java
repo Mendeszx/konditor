@@ -4,6 +4,7 @@ import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.request.CalcularCustosRequest;
 import com.api.konditor.app.controller.request.CriarReceitaRequest;
 import com.api.konditor.app.controller.response.BuscaIngredienteResponse;
+import com.api.konditor.app.controller.response.CategoriaReceitaResponse;
 import com.api.konditor.app.controller.response.CustosCalculadosResponse;
 import com.api.konditor.app.controller.response.ReceitaResponse;
 import com.api.konditor.domain.useCase.ReceitaUseCase;
@@ -54,6 +55,11 @@ public class ReceitaService {
     public List<BuscaIngredienteResponse> buscarIngredientes(String query, UsuarioAutenticado usuario) {
         log.debug("[RECEITA-SERVICE] Delegando busca de ingredientes query='{}' workspaceId={}", query, usuario.workspaceId());
         return receitaUseCase.buscarIngredientes(query, usuario);
+    }
+
+    public List<CategoriaReceitaResponse> listarCategorias() {
+        log.debug("[RECEITA-SERVICE] Delegando listagem de categorias ao use case.");
+        return receitaUseCase.listarCategorias();
     }
 }
 

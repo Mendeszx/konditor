@@ -1,11 +1,13 @@
 package com.api.konditor.app.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -98,6 +100,62 @@ public class GlobalExceptionHandler {
         log.warn("[EXCEPTION] Falha na operação de receita: {}", ex.getMessage());
         ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.valueOf(422), ex.getMessage());
         detail.setType(URI.create("https://konditor.api/errors/receita-failed"));
+        detail.setProperty("timestamp", Instant.now());
+        return detail;
+    }
+
+    /**
+     * Trata erros de regras de negócio da gestão de ingredientes.
+     */
+    @ExceptionHandler(IngredienteException.class)
+    public ProblemDetail handleIngredienteException(IngredienteException ex) {
+        log.warn("[EXCEPTION] Falha na operação de ingrediente: {}", ex.getMessage());
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.valueOf(422), ex.getMessage());
+        detail.setType(URI.create("https://konditor.api/errors/ingrediente-failed"));
+        detail.setProperty("timestamp", Instant.now());
+        return detail;
+    }
+
+    /**
+     * Trata argumentos inválidos passados para os endpoints (ex: tipo de unidade desconhecido).
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ProblemDetail handleIllegalArgument(IllegalArgumentException ex) {
+        log.warn("[EXCEPTION] Argumento inválido: {}", ex.getMessage());
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        detail.setType(URI.create("https://konditor.api/errors/invalid-argument"));
+        detail.setProperty("timestamp", Instant.now());
+        return detail;
+    }
+
+    /**
+     * Trata cookie de refresh token ausente na requisição {@code POST /auth/refresh}.
+     *
+     * <p>Ocorre quando o cliente não envia o cookie {@code refresh_token} — seja por
+     * estar expirado, por nunca ter sido definido ou por um cliente HTTP que não
+     * persiste cookies (ex: Postman sem cookie jar, fetch sem {@code credentials: 'include'}).
+     */
+    @ExceptionHandler(MissingRequestCookieException.class)
+    public ProblemDetail handleMissingCookie(MissingRequestCookieException ex) {
+        log.warn("[EXCEPTION] Cookie obrigatório ausente: {}", ex.getCookieName());
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNAUTHORIZED,
+                "Cookie '" + ex.getCookieName() + "' não encontrado. Faça login novamente.");
+        detail.setType(URI.create("https://konditor.api/errors/missing-refresh-token"));
+        detail.setProperty("timestamp", Instant.now());
+        return detail;
+    }
+
+    /**
+     * Trata violações de restrição de unicidade ou integridade do banco de dados.
+     * Retorna 409 Conflict para que o cliente saiba que o recurso já existe.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
+        log.warn("[EXCEPTION] Violação de integridade de dados: {}", ex.getMostSpecificCause().getMessage());
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, "Operação viola uma restrição de unicidade dos dados.");
+        detail.setType(URI.create("https://konditor.api/errors/data-integrity-violation"));
         detail.setProperty("timestamp", Instant.now());
         return detail;
     }

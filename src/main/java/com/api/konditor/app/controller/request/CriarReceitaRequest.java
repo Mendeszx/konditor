@@ -32,6 +32,7 @@ public class CriarReceitaRequest {
     private BigDecimal rendimentoQuantidade;
 
     /** ID da unidade de rendimento (ex: UUID da unidade "unidades", "kg"). */
+    @NotNull(message = "Unidade de rendimento é obrigatória")
     private UUID rendimentoUnidadeId;
 
     /** ID da categoria do produto no workspace. */

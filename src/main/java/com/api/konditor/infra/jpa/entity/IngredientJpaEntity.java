@@ -34,9 +34,19 @@ public class IngredientJpaEntity {
     @Column(nullable = false)
     private String name;
 
+    @Column
+    private String code;
+
+    @Column(columnDefinition = "text")
+    private String description;
+
     /** Marca / fornecedor do ingrediente. */
     @Column
     private String brand;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private IngredientCategoryJpaEntity category;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "unit_id", nullable = false)

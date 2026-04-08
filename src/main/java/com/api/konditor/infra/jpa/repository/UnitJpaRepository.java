@@ -20,4 +20,8 @@ public interface UnitJpaRepository extends JpaRepository<UnitJpaEntity, UUID> {
     List<UnitJpaEntity> findAllByIsBaseTrue();
 
     Optional<UnitJpaEntity> findByIdAndDeletedAtIsNull(UUID id);
+
+    List<UnitJpaEntity> findAllByDeletedAtIsNullOrderByNameAsc();
+
+    List<UnitJpaEntity> findAllByTypeAndDeletedAtIsNullOrderByNameAsc(UnitType type);
 }

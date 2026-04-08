@@ -4,6 +4,7 @@ import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.request.CalcularCustosRequest;
 import com.api.konditor.app.controller.request.CriarReceitaRequest;
 import com.api.konditor.app.controller.response.BuscaIngredienteResponse;
+import com.api.konditor.app.controller.response.CategoriaReceitaResponse;
 import com.api.konditor.app.controller.response.CustosCalculadosResponse;
 import com.api.konditor.app.controller.response.ReceitaResponse;
 
@@ -48,6 +49,12 @@ public interface ReceitaUseCase {
      * <p>Permite sobrescrever os percentuais padrão de mão de obra, custos fixos e margem.
      */
     CustosCalculadosResponse calcularCustos(CalcularCustosRequest request, UsuarioAutenticado usuario);
+
+    /**
+     * Retorna todas as categorias de receita globais, ordenadas por nome.
+     * Usadas para preencher chips de filtro e seletores na tela de receitas.
+     */
+    List<CategoriaReceitaResponse> listarCategorias();
 
     /**
      * Busca ingredientes do workspace por nome (autocomplete).

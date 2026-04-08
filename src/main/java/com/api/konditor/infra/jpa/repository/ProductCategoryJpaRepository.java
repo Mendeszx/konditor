@@ -9,13 +9,14 @@ import java.util.UUID;
 
 /**
  * Repositório Spring Data JPA para {@link ProductCategoryJpaEntity}.
+ * <p>
+ * Categorias são globais — não filtradas por workspace.
  */
 public interface ProductCategoryJpaRepository extends JpaRepository<ProductCategoryJpaEntity, UUID> {
 
-    List<ProductCategoryJpaEntity> findAllByWorkspaceIdAndDeletedAtIsNull(UUID workspaceId);
+    List<ProductCategoryJpaEntity> findAllByDeletedAtIsNullOrderByNameAsc();
 
-    Optional<ProductCategoryJpaEntity> findByIdAndWorkspaceIdAndDeletedAtIsNull(UUID id, UUID workspaceId);
+    Optional<ProductCategoryJpaEntity> findByIdAndDeletedAtIsNull(UUID id);
 
-    boolean existsByWorkspaceIdAndNameIgnoreCaseAndDeletedAtIsNull(UUID workspaceId, String name);
+    boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name);
 }
-

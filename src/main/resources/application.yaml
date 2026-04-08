@@ -2,6 +2,10 @@ spring:
   application:
     name: konditor
 
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
+
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/konditor}
     username: ${DB_USER:postgres}

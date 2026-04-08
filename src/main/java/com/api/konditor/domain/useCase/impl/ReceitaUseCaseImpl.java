@@ -5,6 +5,7 @@ import com.api.konditor.app.controller.request.CalcularCustosRequest;
 import com.api.konditor.app.controller.request.CriarReceitaRequest;
 import com.api.konditor.app.controller.request.IngredienteReceitaRequest;
 import com.api.konditor.app.controller.response.BuscaIngredienteResponse;
+import com.api.konditor.app.controller.response.CategoriaReceitaResponse;
 import com.api.konditor.app.controller.response.CustosCalculadosResponse;
 import com.api.konditor.app.controller.response.IngredienteReceitaResponse;
 import com.api.konditor.app.controller.response.ReceitaResponse;
@@ -84,7 +85,7 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
         validarNomeUnico(request.getNome(), workspaceId, null);
 
         ProductCategoryJpaEntity category = request.getCategoriaId() != null
-                ? buscarCategoria(request.getCategoriaId(), workspaceId) : null;
+                ? buscarCategoria(request.getCategoriaId()) : null;
         UnitJpaEntity yieldUnit = request.getRendimentoUnidadeId() != null
                 ? buscarUnidade(request.getRendimentoUnidadeId()) : null;
 
@@ -122,7 +123,7 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
         validarNomeUnico(request.getNome(), workspaceId, id);
 
         ProductCategoryJpaEntity category = request.getCategoriaId() != null
-                ? buscarCategoria(request.getCategoriaId(), workspaceId) : null;
+                ? buscarCategoria(request.getCategoriaId()) : null;
         UnitJpaEntity yieldUnit = request.getRendimentoUnidadeId() != null
                 ? buscarUnidade(request.getRendimentoUnidadeId()) : null;
 
@@ -240,6 +241,21 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
                 .custosFixosTipo(request.getCustosFixosTipo())
                 .margemUtilizada(margemDesejada)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CategoriaReceitaResponse> listarCategorias() {
+        log.debug("[RECEITA] Listando categorias globais de receita");
+
+        return productCategoryRepository.findAllByDeletedAtIsNullOrderByNameAsc()
+                .stream()
+                .map(c -> CategoriaReceitaResponse.builder()
+                        .id(c.getId().toString())
+                        .nome(c.getName())
+                        .cor(c.getColor())
+                        .build())
+                .toList();
     }
 
     @Override
@@ -487,9 +503,9 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
                 .orElseThrow(() -> new ReceitaException("Workspace não encontrado."));
     }
 
-    private ProductCategoryJpaEntity buscarCategoria(UUID categoriaId, UUID workspaceId) {
+    private ProductCategoryJpaEntity buscarCategoria(UUID categoriaId) {
         return productCategoryRepository
-                .findByIdAndWorkspaceIdAndDeletedAtIsNull(categoriaId, workspaceId)
+                .findByIdAndDeletedAtIsNull(categoriaId)
                 .orElseThrow(() -> new ReceitaException("Categoria não encontrada: " + categoriaId));
     }
 

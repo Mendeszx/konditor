@@ -4,6 +4,7 @@ import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.request.CalcularCustosRequest;
 import com.api.konditor.app.controller.request.CriarReceitaRequest;
 import com.api.konditor.app.controller.response.BuscaIngredienteResponse;
+import com.api.konditor.app.controller.response.CategoriaReceitaResponse;
 import com.api.konditor.app.controller.response.CustosCalculadosResponse;
 import com.api.konditor.app.controller.response.ReceitaResponse;
 import com.api.konditor.app.service.ReceitaService;
@@ -134,6 +135,20 @@ public class ReceitaController {
         log.info("[RECEITA] POST /receitas/calcular — userId={} ingredientes={}",
                 usuario.id(), request.getIngredientes().size());
         return ResponseEntity.ok(receitaService.calcularCustos(request, usuario));
+    }
+
+    /**
+     * Retorna todas as categorias de receita globais, ordenadas por nome.
+     * Usadas para preencher chips de filtro e o seletor de categoria ao criar/editar uma receita.
+     *
+     * @return 200 OK com a lista de categorias
+     */
+    @GetMapping("/receitas/categorias")
+    public ResponseEntity<List<CategoriaReceitaResponse>> listarCategorias() {
+        log.info("[RECEITA] GET /receitas/categorias");
+        List<CategoriaReceitaResponse> response = receitaService.listarCategorias();
+        log.info("[RECEITA] {} categorias retornadas", response.size());
+        return ResponseEntity.ok(response);
     }
 
     /**

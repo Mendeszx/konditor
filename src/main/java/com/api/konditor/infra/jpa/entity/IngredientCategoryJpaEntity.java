@@ -7,19 +7,19 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Entidade JPA que mapeia a tabela {@code product_categories}.
+ * Entidade JPA que mapeia a tabela {@code ingredient_categories}.
  * <p>
- * Categorias <strong>globais</strong> de produto (ex: Bolo, Brigadeiro, Salgado).
+ * Categorias <strong>globais</strong> de ingrediente (ex: Chocolate, Laticínio, Farinha).
  * Compartilhadas entre todos os workspaces — não pertencem a nenhum workspace específico.
  */
 @Entity
-@Table(name = "product_categories")
+@Table(name = "ingredient_categories")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductCategoryJpaEntity {
+public class IngredientCategoryJpaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -29,7 +29,6 @@ public class ProductCategoryJpaEntity {
     @Column(nullable = false, unique = true)
     private String name;
 
-    /** Cor em hexadecimal para exibição na UI (ex: #FF5733). */
     @Column
     private String color;
 

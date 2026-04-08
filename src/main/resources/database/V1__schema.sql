@@ -1,5 +1,5 @@
 -- =============================================================================
--- KONDITOR — Schema principal
+-- KONDITOR — Schema completo (V1 + V2 + V3 unificados)
 -- Doceria multi-tenant: workspaces, receitas, pedidos, financeiro
 -- =============================================================================
 
@@ -231,20 +231,22 @@ create table workspace_members (
 );
 
 -- =============================================================================
--- CATEGORIAS DE PRODUTO (ex: bolo, brigadeiro, salgado)
+-- CATEGORIAS DE PRODUTO — tabela global (ex: Bolo, Brigadeiro, Salgado)
+-- Compartilhada entre todos os workspaces; não possui workspace_id.
 -- =============================================================================
 create table product_categories (
-  id           uuid primary key default gen_random_uuid(),
-  workspace_id uuid not null references workspaces(id) on delete cascade,
-  name         text not null,
-  color        text,
-  created_at   timestamptz not null default now(),
-  updated_at   timestamptz,
-  deleted_at   timestamptz,
-  created_by   uuid references users(id),
-  updated_by   uuid references users(id)
+  id         uuid primary key default gen_random_uuid(),
+  name       text not null,
+  color      text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz,
+  deleted_at timestamptz,
+  created_by uuid references users(id),
+  updated_by uuid references users(id)
 );
-create unique index idx_product_categories_workspace_name on product_categories(workspace_id, lower(name));
+create unique index idx_product_categories_name
+    on product_categories(lower(name))
+    where deleted_at is null;
 
 -- =============================================================================
 -- UNIDADES DE MEDIDA
@@ -280,6 +282,21 @@ create table unit_conversions (
 );
 
 -- =============================================================================
+-- CATEGORIAS DE INGREDIENTE — tabela global (ex: Chocolate, Laticínio, Farinha)
+-- Compartilhada entre todos os workspaces; não possui workspace_id.
+-- =============================================================================
+create table ingredient_categories (
+  id         uuid        primary key default gen_random_uuid(),
+  name       text        not null,
+  color      text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz,
+  deleted_at timestamptz,
+  created_by uuid        references users(id),
+  updated_by uuid        references users(id)
+);
+
+-- =============================================================================
 -- INGREDIENTES
 -- =============================================================================
 create table ingredients (
@@ -288,6 +305,11 @@ create table ingredients (
   name         text not null,
   brand        text,
   unit_id      uuid not null references units(id),
+
+  -- V3: código e descrição opcionais
+  code         text,
+  description  text,
+  category_id  uuid references ingredient_categories(id) on delete set null,
 
   cost_per_unit     numeric not null,  -- deve ser >= 0 — validado no useCase
   stock_quantity    numeric,           -- null = não controla estoque
@@ -301,6 +323,18 @@ create table ingredients (
   updated_by   uuid references users(id)
 );
 create unique index idx_ingredients_workspace_name on ingredients(workspace_id, lower(name));
+
+-- =============================================================================
+-- HISTÓRICO DE PREÇO DE INGREDIENTES (V3)
+-- =============================================================================
+create table ingredient_price_history (
+  id            uuid        primary key default gen_random_uuid(),
+  ingredient_id uuid        not null references ingredients(id) on delete cascade,
+  old_price     numeric     not null,
+  new_price     numeric     not null,
+  changed_at    timestamptz not null default now(),
+  changed_by    uuid        references users(id)
+);
 
 -- =============================================================================
 -- PRODUTOS
@@ -318,6 +352,11 @@ create table products (
   calculated_cost   numeric,           -- deve ser >= 0 — validado no useCase
   prep_time_minutes integer,           -- deve ser >= 0 — validado no useCase
 
+  -- V2: status da receita e preço sugerido
+  status          text    not null default 'publicada'
+                          constraint chk_products_status check (status in ('rascunho', 'publicada')),
+  suggested_price numeric,
+
   notes      text,
   is_active  boolean not null,
   created_at timestamptz not null default now(),
@@ -332,7 +371,7 @@ create unique index idx_products_workspace_name on products(workspace_id, lower(
 -- RECEITA (INGREDIENTES DO PRODUTO)
 -- =============================================================================
 create table product_ingredients (
-  id            uuid primary key default gen_random_uuid(),
+  id            uuid    primary key default gen_random_uuid(),
   product_id    uuid    not null references products(id) on delete cascade,
   ingredient_id uuid    not null references ingredients(id),
   quantity      numeric not null,  -- deve ser > 0 — validado no useCase
@@ -481,3 +520,127 @@ create index idx_refresh_token_user           on refresh_tokens(user_id);
 create index idx_audit_entity                 on audit_logs(entity_name, entity_id);
 create index idx_audit_workspace              on audit_logs(workspace_id);
 create index idx_audit_performed_at           on audit_logs(performed_at);
+
+-- V2: receitas publicadas (query mais comum no dashboard)
+create index idx_products_workspace_status
+    on products(workspace_id, status)
+    where deleted_at is null and is_active = true;
+
+-- V3: categorias de ingrediente (globais — sem workspace_id)
+create unique index idx_ingredient_categories_name
+    on ingredient_categories(lower(name))
+    where deleted_at is null;
+
+create index idx_ingredient_categories_active
+    on ingredient_categories(id)
+    where deleted_at is null;
+
+-- V3: código único de ingrediente por workspace (ignora NULLs)
+create unique index idx_ingredients_workspace_code
+    on ingredients(workspace_id, code)
+    where code is not null and deleted_at is null;
+
+create index idx_ingredients_category
+    on ingredients(category_id)
+    where deleted_at is null;
+
+-- V3: histórico de preço
+create index idx_ingredient_price_history_ingredient
+    on ingredient_price_history(ingredient_id, changed_at desc);
+
+-- =============================================================================
+-- SEED — Unidades de medida globais
+-- =============================================================================
+
+insert into units (name, symbol, type, is_base) values
+  -- Peso
+  ('Grama',       'g',   'weight', true),
+  ('Quilograma',  'kg',  'weight', false),
+  ('Miligrama',   'mg',  'weight', false),
+  -- Volume
+  ('Mililitro',   'ml',  'volume', true),
+  ('Litro',       'L',   'volume', false),
+  ('Colher de sopa', 'colher sopa', 'volume', false),
+  ('Colher de chá',  'colher chá',  'volume', false),
+  ('Xícara',      'xícara', 'volume', false),
+  -- Contagem
+  ('Unidade',     'un',  'unit', true),
+  ('Dúzia',       'dz',  'unit', false),
+  ('Pacote',      'pct', 'unit', false);
+
+-- Conversões de unidade (peso)
+insert into unit_conversions (from_unit_id, to_unit_id, factor)
+select f.id, t.id, c.factor
+from (values
+  ('kg',  'g',  1000.000000),
+  ('g',   'kg', 0.001000),
+  ('mg',  'g',  0.001000),
+  ('g',   'mg', 1000.000000)
+) as c(from_sym, to_sym, factor)
+join units f on f.symbol = c.from_sym
+join units t on t.symbol = c.to_sym;
+
+-- Conversões de unidade (volume)
+insert into unit_conversions (from_unit_id, to_unit_id, factor)
+select f.id, t.id, c.factor
+from (values
+  ('L',          'ml', 1000.000000),
+  ('ml',         'L',  0.001000),
+  ('colher sopa','ml', 15.000000),
+  ('colher chá', 'ml', 5.000000),
+  ('xícara',     'ml', 240.000000)
+) as c(from_sym, to_sym, factor)
+join units f on f.symbol = c.from_sym
+join units t on t.symbol = c.to_sym;
+
+-- Conversões de unidade (contagem)
+insert into unit_conversions (from_unit_id, to_unit_id, factor)
+select f.id, t.id, c.factor
+from (values
+  ('dz', 'un', 12.000000),
+  ('un', 'dz', 0.083333)
+) as c(from_sym, to_sym, factor)
+join units f on f.symbol = c.from_sym
+join units t on t.symbol = c.to_sym;
+
+-- =============================================================================
+-- SEED — Categorias de produto globais
+-- =============================================================================
+
+insert into product_categories (name, color) values
+  ('Bolo',            '#F59E0B'),
+  ('Brigadeiro',      '#92400E'),
+  ('Cupcake',         '#EC4899'),
+  ('Torta',           '#D97706'),
+  ('Cookie',          '#78350F'),
+  ('Salgado',         '#10B981'),
+  ('Mousse',          '#6366F1'),
+  ('Doce de Festa',   '#EF4444'),
+  ('Sobremesa',       '#8B5CF6'),
+  ('Pão de Mel',      '#B45309'),
+  ('Trufa',           '#1F2937'),
+  ('Macarons',        '#F472B6'),
+  ('Outros',          '#9CA3AF');
+
+-- =============================================================================
+-- SEED — Categorias de ingrediente globais
+-- =============================================================================
+
+insert into ingredient_categories (name, color) values
+  ('Chocolate',              '#78350F'),
+  ('Laticínio',              '#FEF3C7'),
+  ('Farinha e Grãos',        '#D97706'),
+  ('Açúcar e Adoçantes',     '#FDE68A'),
+  ('Gordura',                '#FBBF24'),
+  ('Ovos',                   '#F59E0B'),
+  ('Frutas e Polpas',        '#EF4444'),
+  ('Aromatizante',           '#8B5CF6'),
+  ('Fermento e Levedura',    '#6EE7B7'),
+  ('Corante e Decoração',    '#EC4899'),
+  ('Embalagem',              '#6B7280'),
+  ('Castanhas e Sementes',   '#92400E'),
+  ('Bebidas e Licores',      '#1D4ED8'),
+  ('Conservante e Aditivo',  '#374151'),
+  ('Outros',                 '#9CA3AF');
+
+
