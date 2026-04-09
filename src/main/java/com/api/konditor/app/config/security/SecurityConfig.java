@@ -59,6 +59,8 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**")
+                    .permitAll()
                     .requestMatchers(HttpMethod.POST, "/auth/google")
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/auth/refresh")

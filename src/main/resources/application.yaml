@@ -45,4 +45,30 @@ security:
     # Cron to purge expired refresh tokens. Default: daily at 03:00 UTC.
     cron: ${TOKEN_CLEANUP_CRON:0 0 3 * * *}
 
+# ─── Actuator / Health Check ─────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        # Expõe apenas health — nunca exponha env, beans, mappings em produção
+        include: health
+  endpoint:
+    health:
+      # Unauthenticated → {"status":"UP"}  |  Authenticated → detalhes completos
+      show-details: when-authorized
+      show-components: when-authorized
+  health:
+    # Habilita probes /actuator/health/liveness e /actuator/health/readiness (Kubernetes)
+    probes:
+      enabled: ${HEALTH_PROBES_ENABLED:true}
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+    db:
+      enabled: true
+    diskspace:
+      enabled: true
+
 
