@@ -1,11 +1,10 @@
 package com.api.konditor.app.controller.response;
 
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.math.BigDecimal;
 
 /**
  * Estatísticas gerais do dashboard para o workspace autenticado.
@@ -13,6 +12,7 @@ import java.math.BigDecimal;
  * <p>Retornado pelo endpoint {@code GET /dashboard/estatisticas}.
  *
  * <p>Exemplo de resposta:
+ *
  * <pre>
  * {
  *   "totalReceitas": 42,
@@ -30,19 +30,17 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class DashboardStatsResponse {
 
-    /** Número total de receitas ativas cadastradas no workspace. */
-    private int totalReceitas;
+  /** Número total de receitas ativas cadastradas no workspace. */
+  private int totalReceitas;
 
-    /**
-     * Média aritmética das margens de lucro de todas as receitas ativas,
-     * arredondada para 1 casa decimal (ex: 68.4).
-     */
-    private BigDecimal margemMedia;
+  /**
+   * Média aritmética das margens de lucro de todas as receitas ativas, arredondada para 1 casa
+   * decimal (ex: 68.4).
+   */
+  private BigDecimal margemMedia;
 
-    /**
-     * Receita com a maior margem de lucro.
-     * {@code null} se o workspace não possuir receitas ativas.
-     */
-    private MelhorMargemResponse melhorMargem;
+  /**
+   * Receita com a maior margem de lucro. {@code null} se o workspace não possuir receitas ativas.
+   */
+  private MelhorMargemResponse melhorMargem;
 }
-

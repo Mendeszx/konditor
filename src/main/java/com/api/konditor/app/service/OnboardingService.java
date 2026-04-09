@@ -18,10 +18,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class OnboardingService {
 
-    private final OnboardingUseCase onboardingUseCase;
+  private final OnboardingUseCase onboardingUseCase;
 
-    public OnboardingResponse executarOnboarding(UsuarioAutenticado usuario, OnboardingRequest request) {
-        log.debug("[ONBOARDING-SERVICE] Delegando onboarding para use case. userId={}", usuario.id());
-        return onboardingUseCase.executar(usuario, request);
-    }
+  public OnboardingResponse executarOnboarding(
+      UsuarioAutenticado usuario, OnboardingRequest request) {
+    log.debug("[ONBOARDING-SERVICE] Delegando onboarding para use case. userId={}", usuario.id());
+    return onboardingUseCase.executar(usuario, request);
+  }
 }

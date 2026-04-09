@@ -7,8 +7,7 @@ package com.api.konditor.app.exception;
  */
 public class IngredienteException extends RuntimeException {
 
-    public IngredienteException(String message) {
-        super(message);
-    }
+  public IngredienteException(String message) {
+    super(message);
+  }
 }
-

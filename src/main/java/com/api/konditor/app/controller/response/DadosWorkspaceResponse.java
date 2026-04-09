@@ -7,16 +7,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Dados do workspace (tenant) ativo retornados nas respostas de autenticação.
- */
+/** Dados do workspace (tenant) ativo retornados nas respostas de autenticação. */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class DadosWorkspaceResponse {
 
-    private String id;
-    private Role role;
-    private Plan plano;
+  private String id;
+  private Role role;
+  private Plan plano;
 }

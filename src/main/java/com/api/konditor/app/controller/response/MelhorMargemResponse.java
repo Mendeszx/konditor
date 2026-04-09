@@ -16,10 +16,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class MelhorMargemResponse {
 
-    /** Nome da receita com maior margem de lucro. */
-    private String nome;
+  /** Nome da receita com maior margem de lucro. */
+  private String nome;
 
-    /** Margem de lucro em percentual, arredondada para inteiro (ex: 81). */
-    private int margem;
+  /** Margem de lucro em percentual, arredondada para inteiro (ex: 81). */
+  private int margem;
 }
-

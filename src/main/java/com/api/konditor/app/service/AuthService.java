@@ -20,21 +20,22 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final AuthUseCase authUseCase;
+  private final AuthUseCase authUseCase;
 
-    public GoogleAuthResponse loginComGoogle(String idToken) {
-        return authUseCase.loginComGoogle(idToken, currentResponse());
-    }
+  public GoogleAuthResponse loginComGoogle(String idToken) {
+    return authUseCase.loginComGoogle(idToken, currentResponse());
+  }
 
-    public RenovarTokenResponse renovarToken(String refreshToken) {
-        return authUseCase.renovarToken(refreshToken, currentResponse());
-    }
+  public RenovarTokenResponse renovarToken(String refreshToken) {
+    return authUseCase.renovarToken(refreshToken, currentResponse());
+  }
 
-    public void logout(String userId) {
-        authUseCase.logout(userId, currentResponse());
-    }
+  public void logout(String userId) {
+    authUseCase.logout(userId, currentResponse());
+  }
 
-    private HttpServletResponse currentResponse() {
-        return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getResponse();
-    }
+  private HttpServletResponse currentResponse() {
+    return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
+        .getResponse();
+  }
 }

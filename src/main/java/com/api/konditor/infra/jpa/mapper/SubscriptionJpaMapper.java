@@ -8,11 +8,12 @@ import org.mapstruct.MappingConstants;
 /**
  * Mapper MapStruct entre {@link SubscriptionJpaEntity} (infra) e {@link Subscription} (domínio).
  */
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING,
-        uses = {WorkspaceJpaMapper.class, UserJpaMapper.class, PlanDetailsJpaMapper.class})
+@Mapper(
+    componentModel = MappingConstants.ComponentModel.SPRING,
+    uses = {WorkspaceJpaMapper.class, UserJpaMapper.class, PlanDetailsJpaMapper.class})
 public interface SubscriptionJpaMapper {
 
-    Subscription toDomain(SubscriptionJpaEntity entity);
+  Subscription toDomain(SubscriptionJpaEntity entity);
 
-    SubscriptionJpaEntity toJpa(Subscription domain);
+  SubscriptionJpaEntity toJpa(Subscription domain);
 }

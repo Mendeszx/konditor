@@ -8,12 +8,11 @@ import com.api.konditor.app.controller.response.CategoriaReceitaResponse;
 import com.api.konditor.app.controller.response.CustosCalculadosResponse;
 import com.api.konditor.app.controller.response.ReceitaResponse;
 import com.api.konditor.domain.useCase.ReceitaUseCase;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.UUID;
 
 /**
  * Serviço de aplicação — orquestrador de receitas.
@@ -25,41 +24,50 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ReceitaService {
 
-    private final ReceitaUseCase receitaUseCase;
+  private final ReceitaUseCase receitaUseCase;
 
-    public ReceitaResponse criar(CriarReceitaRequest request, UsuarioAutenticado usuario) {
-        log.debug("[RECEITA-SERVICE] Delegando criação de receita ao use case. workspaceId={}", usuario.workspaceId());
-        return receitaUseCase.criar(request, usuario);
-    }
+  public ReceitaResponse criar(CriarReceitaRequest request, UsuarioAutenticado usuario) {
+    log.debug(
+        "[RECEITA-SERVICE] Delegando criação de receita ao use case. workspaceId={}",
+        usuario.workspaceId());
+    return receitaUseCase.criar(request, usuario);
+  }
 
-    public ReceitaResponse atualizar(UUID id, CriarReceitaRequest request, UsuarioAutenticado usuario) {
-        log.debug("[RECEITA-SERVICE] Delegando atualização id={} ao use case.", id);
-        return receitaUseCase.atualizar(id, request, usuario);
-    }
+  public ReceitaResponse atualizar(
+      UUID id, CriarReceitaRequest request, UsuarioAutenticado usuario) {
+    log.debug("[RECEITA-SERVICE] Delegando atualização id={} ao use case.", id);
+    return receitaUseCase.atualizar(id, request, usuario);
+  }
 
-    public ReceitaResponse publicar(UUID id, UsuarioAutenticado usuario) {
-        log.debug("[RECEITA-SERVICE] Delegando publicação id={} ao use case.", id);
-        return receitaUseCase.publicar(id, usuario);
-    }
+  public ReceitaResponse publicar(UUID id, UsuarioAutenticado usuario) {
+    log.debug("[RECEITA-SERVICE] Delegando publicação id={} ao use case.", id);
+    return receitaUseCase.publicar(id, usuario);
+  }
 
-    public ReceitaResponse buscarPorId(UUID id, UsuarioAutenticado usuario) {
-        log.debug("[RECEITA-SERVICE] Delegando busca id={} ao use case.", id);
-        return receitaUseCase.buscarPorId(id, usuario);
-    }
+  public ReceitaResponse buscarPorId(UUID id, UsuarioAutenticado usuario) {
+    log.debug("[RECEITA-SERVICE] Delegando busca id={} ao use case.", id);
+    return receitaUseCase.buscarPorId(id, usuario);
+  }
 
-    public CustosCalculadosResponse calcularCustos(CalcularCustosRequest request, UsuarioAutenticado usuario) {
-        log.debug("[RECEITA-SERVICE] Delegando cálculo de custos ao use case. workspaceId={}", usuario.workspaceId());
-        return receitaUseCase.calcularCustos(request, usuario);
-    }
+  public CustosCalculadosResponse calcularCustos(
+      CalcularCustosRequest request, UsuarioAutenticado usuario) {
+    log.debug(
+        "[RECEITA-SERVICE] Delegando cálculo de custos ao use case. workspaceId={}",
+        usuario.workspaceId());
+    return receitaUseCase.calcularCustos(request, usuario);
+  }
 
-    public List<BuscaIngredienteResponse> buscarIngredientes(String query, UsuarioAutenticado usuario) {
-        log.debug("[RECEITA-SERVICE] Delegando busca de ingredientes query='{}' workspaceId={}", query, usuario.workspaceId());
-        return receitaUseCase.buscarIngredientes(query, usuario);
-    }
+  public List<BuscaIngredienteResponse> buscarIngredientes(
+      String query, UsuarioAutenticado usuario) {
+    log.debug(
+        "[RECEITA-SERVICE] Delegando busca de ingredientes query='{}' workspaceId={}",
+        query,
+        usuario.workspaceId());
+    return receitaUseCase.buscarIngredientes(query, usuario);
+  }
 
-    public List<CategoriaReceitaResponse> listarCategorias() {
-        log.debug("[RECEITA-SERVICE] Delegando listagem de categorias ao use case.");
-        return receitaUseCase.listarCategorias();
-    }
+  public List<CategoriaReceitaResponse> listarCategorias() {
+    log.debug("[RECEITA-SERVICE] Delegando listagem de categorias ao use case.");
+    return receitaUseCase.listarCategorias();
+  }
 }
-

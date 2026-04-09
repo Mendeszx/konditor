@@ -1,12 +1,11 @@
 package com.api.konditor.app.controller.response;
 
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.math.BigDecimal;
 
 /**
  * Um ingrediente dentro da resposta de uma receita.
@@ -20,33 +19,32 @@ import java.math.BigDecimal;
 @Builder
 public class IngredienteReceitaResponse {
 
-    /** ID do vínculo produto-ingrediente (product_ingredients.id). */
-    private String id;
+  /** ID do vínculo produto-ingrediente (product_ingredients.id). */
+  private String id;
 
-    private String ingredienteId;
-    private String ingredienteNome;
-    private String marca;
+  private String ingredienteId;
+  private String ingredienteNome;
+  private String marca;
 
-    /** Quantidade utilizada nesta receita, na unidade informada. */
-    private BigDecimal quantidade;
+  /** Quantidade utilizada nesta receita, na unidade informada. */
+  private BigDecimal quantidade;
 
-    private String unidadeId;
-    private String unidadeSimbolo;
-    private String unidadeNome;
+  private String unidadeId;
+  private String unidadeSimbolo;
+  private String unidadeNome;
 
-    /**
-     * Custo calculado para esta linha: {@code costPerUnit × quantidade × fatorConversão}.
-     * Escala: 4 casas decimais.
-     */
-    private BigDecimal custoCalculado;
+  /**
+   * Custo calculado para esta linha: {@code costPerUnit × quantidade × fatorConversão}. Escala: 4
+   * casas decimais.
+   */
+  private BigDecimal custoCalculado;
 
-    /**
-     * Custo unitário base do ingrediente (sem conversão).
-     * Útil para o frontend exibir o preço de referência no breakdown de custos.
-     */
-    private BigDecimal custoPorUnidade;
+  /**
+   * Custo unitário base do ingrediente (sem conversão). Útil para o frontend exibir o preço de
+   * referência no breakdown de custos.
+   */
+  private BigDecimal custoPorUnidade;
 
-    /** Nota específica para este ingrediente nesta receita (ex: "peneirar antes de usar"). */
-    private String notas;
+  /** Nota específica para este ingrediente nesta receita (ex: "peneirar antes de usar"). */
+  private String notas;
 }
-

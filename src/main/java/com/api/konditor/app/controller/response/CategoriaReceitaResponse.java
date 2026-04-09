@@ -18,10 +18,9 @@ import lombok.Setter;
 @Builder
 public class CategoriaReceitaResponse {
 
-    private String id;
-    private String nome;
+  private String id;
+  private String nome;
 
-    /** Cor em hexadecimal para exibição na UI (ex: #F59E0B). {@code null} se não definida. */
-    private String cor;
+  /** Cor em hexadecimal para exibição na UI (ex: #F59E0B). {@code null} se não definida. */
+  private String cor;
 }
-

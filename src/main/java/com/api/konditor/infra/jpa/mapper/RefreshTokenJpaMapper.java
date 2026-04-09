@@ -11,7 +11,7 @@ import org.mapstruct.MappingConstants;
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface RefreshTokenJpaMapper {
 
-    RefreshToken toDomain(RefreshTokenJpaEntity entity);
+  RefreshToken toDomain(RefreshTokenJpaEntity entity);
 
-    RefreshTokenJpaEntity toJpa(RefreshToken domain);
+  RefreshTokenJpaEntity toJpa(RefreshToken domain);
 }

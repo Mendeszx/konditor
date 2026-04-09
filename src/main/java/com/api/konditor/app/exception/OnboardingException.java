@@ -7,11 +7,11 @@ package com.api.konditor.app.exception;
  */
 public class OnboardingException extends RuntimeException {
 
-    public OnboardingException(String message) {
-        super(message);
-    }
+  public OnboardingException(String message) {
+    super(message);
+  }
 
-    public OnboardingException(String message, Throwable cause) {
-        super(message, cause);
-    }
+  public OnboardingException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

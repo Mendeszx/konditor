@@ -10,8 +10,8 @@ import lombok.Setter;
 /**
  * Resposta do endpoint {@code POST /onboarding}.
  *
- * <p>Retorna os dados do workspace criado e as informações do usuário
- * necessários para o frontend inicializar a sessão corretamente.
+ * <p>Retorna os dados do workspace criado e as informações do usuário necessários para o frontend
+ * inicializar a sessão corretamente.
  */
 @Getter
 @Setter
@@ -19,10 +19,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class OnboardingResponse {
 
-    private String workspaceId;
-    private String workspaceNome;
-    private String moeda;
-    private Role role;
-    private Plan plano;
-    private DadosUsuarioResponse usuario;
+  private String workspaceId;
+  private String workspaceNome;
+  private String moeda;
+  private Role role;
+  private Plan plano;
+  private DadosUsuarioResponse usuario;
 }

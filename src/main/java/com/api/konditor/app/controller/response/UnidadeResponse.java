@@ -18,26 +18,26 @@ import lombok.Setter;
 @Builder
 public class UnidadeResponse {
 
-    /** UUID da unidade — use este valor nos campos {@code unidadeId} dos ingredientes. */
-    private String id;
+  /** UUID da unidade — use este valor nos campos {@code unidadeId} dos ingredientes. */
+  private String id;
 
-    /** Nome completo (ex: "Quilograma", "Litro", "Unidade"). */
-    private String nome;
+  /** Nome completo (ex: "Quilograma", "Litro", "Unidade"). */
+  private String nome;
 
-    /** Símbolo de exibição (ex: "kg", "L", "un"). */
-    private String simbolo;
+  /** Símbolo de exibição (ex: "kg", "L", "un"). */
+  private String simbolo;
 
-    /**
-     * Tipo da unidade:
-     * <ul>
-     *   <li>{@code weight} — peso (kg, g, mg)</li>
-     *   <li>{@code volume} — volume (L, mL)</li>
-     *   <li>{@code unit}   — contagem (un, dz)</li>
-     * </ul>
-     */
-    private String tipo;
+  /**
+   * Tipo da unidade:
+   *
+   * <ul>
+   *   <li>{@code weight} — peso (kg, g, mg)
+   *   <li>{@code volume} — volume (L, mL)
+   *   <li>{@code unit} — contagem (un, dz)
+   * </ul>
+   */
+  private String tipo;
 
-    /** {@code true} se é a unidade base do seu tipo (ex: kg para peso). */
-    private boolean isBase;
+  /** {@code true} se é a unidade base do seu tipo (ex: kg para peso). */
+  private boolean isBase;
 }
-

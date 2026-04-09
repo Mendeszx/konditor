@@ -6,14 +6,15 @@ import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 
 /**
- * Mapper MapStruct entre {@link WorkspaceJpaEntity} (infra) e {@link Workspace} (domínio).
- * O campo {@code owner} é mapeado recursivamente via {@link UserJpaMapper}.
+ * Mapper MapStruct entre {@link WorkspaceJpaEntity} (infra) e {@link Workspace} (domínio). O campo
+ * {@code owner} é mapeado recursivamente via {@link UserJpaMapper}.
  */
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING,
-        uses = {UserJpaMapper.class, PlanDetailsJpaMapper.class})
+@Mapper(
+    componentModel = MappingConstants.ComponentModel.SPRING,
+    uses = {UserJpaMapper.class, PlanDetailsJpaMapper.class})
 public interface WorkspaceJpaMapper {
 
-    Workspace toDomain(WorkspaceJpaEntity entity);
+  Workspace toDomain(WorkspaceJpaEntity entity);
 
-    WorkspaceJpaEntity toJpa(Workspace domain);
+  WorkspaceJpaEntity toJpa(Workspace domain);
 }

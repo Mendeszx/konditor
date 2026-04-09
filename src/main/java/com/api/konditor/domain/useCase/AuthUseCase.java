@@ -6,9 +6,9 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public interface AuthUseCase {
 
-    GoogleAuthResponse loginComGoogle(String idToken, HttpServletResponse response);
+  GoogleAuthResponse loginComGoogle(String idToken, HttpServletResponse response);
 
-    RenovarTokenResponse renovarToken(String refreshToken, HttpServletResponse response);
+  RenovarTokenResponse renovarToken(String refreshToken, HttpServletResponse response);
 
-    void logout(String userId, HttpServletResponse response);
+  void logout(String userId, HttpServletResponse response);
 }

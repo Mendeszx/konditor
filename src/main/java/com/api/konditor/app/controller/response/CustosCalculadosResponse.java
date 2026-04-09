@@ -1,12 +1,11 @@
 package com.api.konditor.app.controller.response;
 
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.math.BigDecimal;
 
 /**
  * Resultado do cálculo de custos e precificação de uma receita.
@@ -14,6 +13,7 @@ import java.math.BigDecimal;
  * <p>Retornado por {@code POST /receitas/calcular}.
  *
  * <p>Fórmulas aplicadas:
+ *
  * <pre>
  *   custoIngredientes    = Σ (costPerUnit × quantidade × fatorConversão)
  *   custoMaoDeObra       = maoDeObraValorHora × (tempoPreparoMinutos / 60)
@@ -33,52 +33,48 @@ import java.math.BigDecimal;
 @Builder
 public class CustosCalculadosResponse {
 
-    /** Custo total dos ingredientes do lote. */
-    private BigDecimal custoIngredientes;
+  /** Custo total dos ingredientes do lote. */
+  private BigDecimal custoIngredientes;
 
-    /**
-     * Custo de mão de obra do lote = {@code maoDeObraValorHora × (tempoPreparoMinutos / 60)}.
-     */
-    private BigDecimal custoMaoDeObra;
+  /** Custo de mão de obra do lote = {@code maoDeObraValorHora × (tempoPreparoMinutos / 60)}. */
+  private BigDecimal custoMaoDeObra;
 
-    /**
-     * Custos fixos aplicados ao lote
-     * (valor absoluto ou percentual sobre ingredientes, conforme {@link #custosFixosTipo}).
-     */
-    private BigDecimal custosFixos;
+  /**
+   * Custos fixos aplicados ao lote (valor absoluto ou percentual sobre ingredientes, conforme
+   * {@link #custosFixosTipo}).
+   */
+  private BigDecimal custosFixos;
 
-    /** Custo total do lote = ingredientes + mão de obra + custos fixos. */
-    private BigDecimal custoTotal;
+  /** Custo total do lote = ingredientes + mão de obra + custos fixos. */
+  private BigDecimal custoTotal;
 
-    /** Preço de venda sugerido para o lote inteiro. */
-    private BigDecimal precoSugerido;
+  /** Preço de venda sugerido para o lote inteiro. */
+  private BigDecimal precoSugerido;
 
-    /** Margem de lucro real obtida com o preço sugerido (1 casa decimal). */
-    private BigDecimal margem;
+  /** Margem de lucro real obtida com o preço sugerido (1 casa decimal). */
+  private BigDecimal margem;
 
-    /** Quantidade produzida pelo lote (denominador). */
-    private BigDecimal rendimentoQuantidade;
+  /** Quantidade produzida pelo lote (denominador). */
+  private BigDecimal rendimentoQuantidade;
 
-    /** Custo total dividido pelo rendimento — quanto custa produzir uma unidade. */
-    private BigDecimal custoTotalPorUnidade;
+  /** Custo total dividido pelo rendimento — quanto custa produzir uma unidade. */
+  private BigDecimal custoTotalPorUnidade;
 
-    /** Preço sugerido dividido pelo rendimento — preço de venda por unidade. */
-    private BigDecimal precoSugeridoPorUnidade;
+  /** Preço sugerido dividido pelo rendimento — preço de venda por unidade. */
+  private BigDecimal precoSugeridoPorUnidade;
 
-    /** Valor da hora informado. */
-    private BigDecimal maoDeObraValorHora;
+  /** Valor da hora informado. */
+  private BigDecimal maoDeObraValorHora;
 
-    /** Tempo de preparo informado (minutos, pode ter fração). */
-    private BigDecimal tempoPreparoMinutos;
+  /** Tempo de preparo informado (minutos, pode ter fração). */
+  private BigDecimal tempoPreparoMinutos;
 
-    /** Valor informado para custos fixos. */
-    private BigDecimal custosFixosValor;
+  /** Valor informado para custos fixos. */
+  private BigDecimal custosFixosValor;
 
-    /**
-     * Tipo de custo fixo utilizado: {@code "percentual"} ou {@code "fixo"}.
-     */
-    private String custosFixosTipo;
+  /** Tipo de custo fixo utilizado: {@code "percentual"} ou {@code "fixo"}. */
+  private String custosFixosTipo;
 
-    /** Margem desejada utilizada no cálculo. */
-    private BigDecimal margemUtilizada;
+  /** Margem desejada utilizada no cálculo. */
+  private BigDecimal margemUtilizada;
 }
