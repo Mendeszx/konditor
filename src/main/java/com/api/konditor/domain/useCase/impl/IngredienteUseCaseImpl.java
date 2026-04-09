@@ -13,12 +13,17 @@ import com.api.konditor.domain.useCase.IngredienteUseCase;
 import com.api.konditor.infra.jpa.entity.IngredientCategoryJpaEntity;
 import com.api.konditor.infra.jpa.entity.IngredientJpaEntity;
 import com.api.konditor.infra.jpa.entity.IngredientPriceHistoryJpaEntity;
+import com.api.konditor.infra.jpa.entity.ProductIngredientJpaEntity;
+import com.api.konditor.infra.jpa.entity.ProductJpaEntity;
+import com.api.konditor.infra.jpa.entity.UnitConversionJpaEntity;
 import com.api.konditor.infra.jpa.entity.UnitJpaEntity;
 import com.api.konditor.infra.jpa.entity.UserJpaEntity;
 import com.api.konditor.infra.jpa.entity.WorkspaceJpaEntity;
 import com.api.konditor.infra.jpa.repository.IngredientCategoryJpaRepository;
 import com.api.konditor.infra.jpa.repository.IngredientJpaRepository;
 import com.api.konditor.infra.jpa.repository.IngredientPriceHistoryJpaRepository;
+import com.api.konditor.infra.jpa.repository.ProductIngredientJpaRepository;
+import com.api.konditor.infra.jpa.repository.UnitConversionJpaRepository;
 import com.api.konditor.infra.jpa.repository.UnitJpaRepository;
 import com.api.konditor.infra.jpa.repository.UserJpaRepository;
 import com.api.konditor.infra.jpa.repository.WorkspaceJpaRepository;
@@ -45,12 +50,16 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class IngredienteUseCaseImpl implements IngredienteUseCase {
 
-    private final IngredientJpaRepository         ingredientRepository;
-    private final IngredientCategoryJpaRepository categoryRepository;
-    private final IngredientPriceHistoryJpaRepository priceHistoryRepository;
-    private final UnitJpaRepository               unitRepository;
-    private final WorkspaceJpaRepository          workspaceRepository;
-    private final UserJpaRepository               userRepository;
+    private static final BigDecimal MARGEM_PADRAO = new BigDecimal("30.00");
+
+    private final IngredientJpaRepository              ingredientRepository;
+    private final IngredientCategoryJpaRepository      categoryRepository;
+    private final IngredientPriceHistoryJpaRepository  priceHistoryRepository;
+    private final UnitJpaRepository                    unitRepository;
+    private final WorkspaceJpaRepository               workspaceRepository;
+    private final UserJpaRepository                    userRepository;
+    private final ProductIngredientJpaRepository       productIngredientRepository;
+    private final UnitConversionJpaRepository          unitConversionRepository;
 
     // =========================================================================
     // Casos de uso
@@ -164,6 +173,15 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public IngredienteResponse buscarPorId(UUID id, UsuarioAutenticado usuario) {
+        UUID workspaceId = resolverWorkspaceId(usuario);
+        log.debug("[INGREDIENTE] Buscando por id={} — workspaceId={}", id, workspaceId);
+        IngredientJpaEntity entity = buscarIngrediente(id, workspaceId);
+        return montarResponse(entity);
+    }
+
+    @Override
     @Transactional
     public IngredienteResponse atualizar(UUID id, CriarIngredienteRequest request, UsuarioAutenticado usuario) {
         UUID workspaceId = resolverWorkspaceId(usuario);
@@ -190,8 +208,83 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
         entity.setNotes(request.getNotas());
         entity.setUpdatedBy(updatedBy);
 
+        recalcularReceitasAfetadas(entity);
         log.info("[INGREDIENTE] Ingrediente id={} atualizado — workspaceId={}", id, workspaceId);
         return montarResponse(entity);
+    }
+
+    // =========================================================================
+    // Recálculo em cascata
+    // =========================================================================
+
+    /**
+     * Recalcula {@code calculatedCost} e {@code suggestedPrice} de todas as receitas
+     * que contêm o ingrediente atualizado.
+     *
+     * <p>Fluxo:
+     * <ol>
+     *   <li>Busca todas as linhas de receita que referenciam este ingrediente.</li>
+     *   <li>Agrupa por produto (receita).</li>
+     *   <li>Para cada produto, carrega TODAS as suas linhas e recalcula o custo total.</li>
+     *   <li>Atualiza {@code calculatedCost} e {@code suggestedPrice} via dirty-checking JPA.</li>
+     * </ol>
+     */
+    private void recalcularReceitasAfetadas(IngredientJpaEntity ingrediente) {
+        List<ProductIngredientJpaEntity> linhasAfetadas =
+                productIngredientRepository.findAllByIngredientIdWithDetails(ingrediente.getId());
+
+        if (linhasAfetadas.isEmpty()) {
+            log.debug("[INGREDIENTE] Nenhuma receita usa o ingrediente id={}", ingrediente.getId());
+            return;
+        }
+
+        // Distinct products via Map (preserva a entidade gerenciada)
+        Map<UUID, ProductJpaEntity> produtosAfetados = linhasAfetadas.stream()
+                .collect(Collectors.toMap(
+                        pi -> pi.getProduct().getId(),
+                        ProductIngredientJpaEntity::getProduct,
+                        (a, b) -> a));
+
+        for (ProductJpaEntity produto : produtosAfetados.values()) {
+            // Carrega TODAS as linhas do produto (não só as do ingrediente alterado)
+            List<ProductIngredientJpaEntity> todasLinhas =
+                    productIngredientRepository.findAllByProductIdWithDetails(produto.getId());
+
+            BigDecimal custoTotal = todasLinhas.stream()
+                    .map(pi -> {
+                        IngredientJpaEntity ing = pi.getIngredient();
+                        BigDecimal fator = resolverFatorConversao(pi.getUnit(), ing.getUnit());
+                        return ing.getCostPerUnit()
+                                .multiply(pi.getQuantity().multiply(fator))
+                                .setScale(4, RoundingMode.HALF_UP);
+                    })
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal divisor = BigDecimal.ONE
+                    .subtract(MARGEM_PADRAO.divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP));
+            BigDecimal precoSugerido = custoTotal.compareTo(BigDecimal.ZERO) == 0
+                    ? BigDecimal.ZERO
+                    : custoTotal.divide(divisor, 2, RoundingMode.HALF_UP);
+
+            produto.setCalculatedCost(custoTotal.setScale(4, RoundingMode.HALF_UP));
+            produto.setSuggestedPrice(precoSugerido.setScale(2, RoundingMode.HALF_UP));
+        }
+
+        log.info("[INGREDIENTE] {} receita(s) recalculadas após atualização do ingrediente id={}",
+                produtosAfetados.size(), ingrediente.getId());
+    }
+
+    /**
+     * Resolve o fator de conversão entre a unidade usada na receita e a unidade base do ingrediente.
+     * Retorna 1 se as unidades forem iguais ou se não houver conversão cadastrada.
+     */
+    private BigDecimal resolverFatorConversao(UnitJpaEntity unidadeReceita, UnitJpaEntity unidadeBase) {
+        if (unidadeReceita == null || unidadeBase == null) return BigDecimal.ONE;
+        if (unidadeReceita.getId().equals(unidadeBase.getId())) return BigDecimal.ONE;
+        return unitConversionRepository
+                .findByFromUnitIdAndToUnitId(unidadeReceita.getId(), unidadeBase.getId())
+                .map(UnitConversionJpaEntity::getFactor)
+                .orElse(BigDecimal.ONE);
     }
 
     // =========================================================================

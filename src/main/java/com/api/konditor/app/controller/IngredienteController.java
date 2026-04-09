@@ -69,6 +69,23 @@ public class IngredienteController {
     }
 
     /**
+     * Retorna os detalhes completos de um ingrediente pelo ID.
+     *
+     * @param id ID do ingrediente
+     * @return 200 OK com os dados completos do ingrediente
+     */
+    @GetMapping("/estoque/{id}")
+    public ResponseEntity<IngredienteResponse> buscarPorId(
+            @AuthenticationPrincipal UsuarioAutenticado usuario,
+            @PathVariable UUID id
+    ) {
+        log.info("[INGREDIENTE] GET /estoque/{} — userId={} workspaceId={}", id, usuario.id(), usuario.workspaceId());
+        IngredienteResponse response = ingredienteService.buscarPorId(id, usuario);
+        log.info("[INGREDIENTE] Ingrediente id={} retornado — workspaceId={}", id, usuario.workspaceId());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Retorna a listagem paginada de ingredientes do workspace.
      *
      * @param categoriaId ID da categoria para filtro (opcional)

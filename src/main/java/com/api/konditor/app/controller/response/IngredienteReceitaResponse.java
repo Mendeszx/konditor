@@ -39,5 +39,14 @@ public class IngredienteReceitaResponse {
      * Escala: 4 casas decimais.
      */
     private BigDecimal custoCalculado;
+
+    /**
+     * Custo unitário base do ingrediente (sem conversão).
+     * Útil para o frontend exibir o preço de referência no breakdown de custos.
+     */
+    private BigDecimal custoPorUnidade;
+
+    /** Nota específica para este ingrediente nesta receita (ex: "peneirar antes de usar"). */
+    private String notas;
 }
 

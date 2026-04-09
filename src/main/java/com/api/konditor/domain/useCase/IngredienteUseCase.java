@@ -52,6 +52,16 @@ public interface IngredienteUseCase {
     List<CategoriaIngredienteResponse> listarCategorias(UsuarioAutenticado usuario);
 
     /**
+     * Retorna os detalhes completos de um ingrediente pelo ID,
+     * garantindo que ele pertence ao workspace do usuário autenticado.
+     *
+     * @param id      ID do ingrediente
+     * @param usuario principal autenticado
+     * @return detalhes completos do ingrediente
+     */
+    IngredienteResponse buscarPorId(UUID id, UsuarioAutenticado usuario);
+
+    /**
      * Cria um novo ingrediente no workspace autenticado.
      * Valida unicidade do nome e referências a unidade e categoria.
      *

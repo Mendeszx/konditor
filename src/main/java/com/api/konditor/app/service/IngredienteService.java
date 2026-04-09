@@ -54,6 +54,11 @@ public class IngredienteService {
         return ingredienteUseCase.criar(request, usuario);
     }
 
+    public IngredienteResponse buscarPorId(UUID id, UsuarioAutenticado usuario) {
+        log.debug("[INGREDIENTE-SERVICE] Delegando busca por id={} ao use case. workspaceId={}", id, usuario.workspaceId());
+        return ingredienteUseCase.buscarPorId(id, usuario);
+    }
+
     public IngredienteResponse atualizar(UUID id, CriarIngredienteRequest request, UsuarioAutenticado usuario) {
         log.debug("[INGREDIENTE-SERVICE] Delegando atualização ao use case. id={} workspaceId={}", id, usuario.workspaceId());
         return ingredienteUseCase.atualizar(id, request, usuario);

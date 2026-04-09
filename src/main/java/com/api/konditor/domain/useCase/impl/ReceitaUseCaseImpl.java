@@ -95,6 +95,7 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
                 .workspace(workspace)
                 .category(category)
                 .name(request.getNome().trim())
+                .description(request.getDescricao())
                 .yieldQuantity(request.getRendimentoQuantidade())
                 .yieldUnit(yieldUnit)
                 .prepTimeMinutes(request.getTempoPreparoMinutos())
@@ -128,6 +129,7 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
                 ? buscarUnidade(request.getRendimentoUnidadeId()) : null;
 
         product.setName(request.getNome().trim());
+        product.setDescription(request.getDescricao());
         product.setCategory(category);
         product.setYieldQuantity(request.getRendimentoQuantidade());
         product.setYieldUnit(yieldUnit);
@@ -318,6 +320,7 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
                     .ingredient(ingredient)
                     .quantity(item.getQuantidade())
                     .unit(unit)
+                    .notes(item.getNotas())
                     .build();
             pi = productIngredientRepository.save(pi);
 
@@ -331,6 +334,8 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
                     .unidadeSimbolo(unit.getSymbol())
                     .unidadeNome(unit.getName())
                     .custoCalculado(custoLinha)
+                    .custoPorUnidade(ingredient.getCostPerUnit())
+                    .notas(pi.getNotes())
                     .build());
         }
         return responses;
@@ -362,6 +367,8 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
                             .unidadeSimbolo(recipeUnit.getSymbol())
                             .unidadeNome(recipeUnit.getName())
                             .custoCalculado(custo)
+                            .custoPorUnidade(ing.getCostPerUnit())
+                            .notas(pi.getNotes())
                             .build();
                 })
                 .toList();
@@ -442,6 +449,8 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
         ProductCategoryJpaEntity cat   = product.getCategory();
         UnitJpaEntity            yUnit = product.getYieldUnit();
 
+        BigDecimal margem = calcularMargemReal(product.getCalculatedCost(), product.getSellingPrice());
+
         return ReceitaResponse.builder()
                 .id(product.getId().toString())
                 .nome(product.getName())
@@ -449,6 +458,7 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
                 .categoriaId(cat   != null ? cat.getId().toString()   : null)
                 .categoriaNome(cat != null ? cat.getName()            : null)
                 .rendimentoQuantidade(product.getYieldQuantity())
+                .rendimentoUnidadeId(yUnit  != null ? yUnit.getId().toString() : null)
                 .rendimentoUnidadeSimbolo(yUnit != null ? yUnit.getSymbol() : null)
                 .rendimentoUnidadeNome(yUnit    != null ? yUnit.getName()   : null)
                 .tempoPreparoMinutos(product.getPrepTimeMinutes())
@@ -457,6 +467,7 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
                 .precoFinal(product.getSellingPrice())
                 .precoSugerido(product.getSuggestedPrice())
                 .custoCalculado(product.getCalculatedCost())
+                .margem(margem.setScale(1, RoundingMode.HALF_UP))
                 .status(product.getStatus())
                 .ativo(product.isActive())
                 .criadoEm(product.getCreatedAt())

@@ -30,5 +30,8 @@ public class IngredienteReceitaRequest {
     /** ID da unidade da quantidade acima (pode diferir da unidade base do ingrediente). */
     @NotNull(message = "ID da unidade é obrigatório")
     private UUID unidadeId;
+
+    /** Nota específica para este ingrediente nesta receita (ex: "peneirar antes de usar"). Opcional. */
+    private String notas;
 }
 

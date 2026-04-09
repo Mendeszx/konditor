@@ -29,7 +29,7 @@ security:
   jwt:
     secret: ${JWT_SECRET:secret-key-change-me-please-!-if-you-use-jwt-in-production}
     # Access token: 15 minutes
-    expiration-seconds: ${JWT_EXPIRATION_SECONDS:900}
+    expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
     # Refresh token: 30 days
     refresh-expiration-seconds: ${JWT_REFRESH_EXPIRATION_SECONDS:2592000}
 

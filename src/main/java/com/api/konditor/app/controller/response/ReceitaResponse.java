@@ -38,6 +38,7 @@ public class ReceitaResponse {
 
     /** Quantidade produzida pelo lote (ex: 12). */
     private BigDecimal rendimentoQuantidade;
+    private String rendimentoUnidadeId;
     private String rendimentoUnidadeSimbolo;
     private String rendimentoUnidadeNome;
 
@@ -58,6 +59,13 @@ public class ReceitaResponse {
 
     /** Custo total de ingredientes × fator de conversão (soma de todos os ingredientes). */
     private BigDecimal custoCalculado;
+
+    /**
+     * Margem real (%) calculada com base no {@code precoFinal} e no {@code custoCalculado}.
+     * Fórmula: {@code ((precoFinal - custoCalculado) / precoFinal) × 100}.
+     * {@code null} quando {@code precoFinal} é zero.
+     */
+    private BigDecimal margem;
 
     /** Status do ciclo de vida: {@code rascunho} ou {@code publicada}. */
     private RecipeStatus status;

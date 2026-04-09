@@ -26,6 +26,9 @@ public class CriarReceitaRequest {
     @NotBlank(message = "Nome da receita é obrigatório")
     private String nome;
 
+    /** Descrição detalhada da receita (opcional). */
+    private String descricao;
+
     /** Quantidade produzida pela receita (ex: 12 para "12 unidades"). */
     @NotNull(message = "Rendimento é obrigatório")
     @Positive(message = "Rendimento deve ser maior que zero")
