@@ -634,9 +634,9 @@ insert into product_categories (name, color) values
 
 insert into ingredient_categories (name, color) values
   ('Chocolate',              '#78350F'),
-  ('Laticínio',              '#FEF3C7'),
+  ('Laticínio',              '#4FC3F7'),
   ('Farinha e Grãos',        '#D97706'),
-  ('Açúcar e Adoçantes',     '#FDE68A'),
+  ('Açúcar e Adoçantes',     '#BA68C8'),
   ('Gordura',                '#FBBF24'),
   ('Ovos',                   '#F59E0B'),
   ('Frutas e Polpas',        '#EF4444'),
