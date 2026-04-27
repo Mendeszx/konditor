@@ -405,6 +405,29 @@ create table ingredientes_produto (
 );
 
 -- =============================================================================
+-- RECEITAS COMO INGREDIENTE (V5)
+-- Uma sub-receita usada como ingrediente em outra receita.
+-- O custo por unidade é: precoFinal / rendimentoQuantidade da sub-receita.
+-- =============================================================================
+create table receitas_como_ingrediente (
+  id                     uuid primary key default gen_random_uuid(),
+  produto_id             uuid not null references produtos(id) on delete cascade,
+  receita_ingrediente_id uuid not null references produtos(id),
+  quantidade             numeric(19,4) not null,
+  notas                  text,
+  criado_em              timestamptz not null default now(),
+  atualizado_em          timestamptz,
+  excluido_em            timestamptz,
+  criado_por             uuid references usuarios(id),
+  atualizado_por         uuid references usuarios(id),
+  constraint chk_rci_no_self_reference check (produto_id != receita_ingrediente_id),
+  unique (produto_id, receita_ingrediente_id)
+);
+
+create index idx_receitas_como_ingrediente_produto on receitas_como_ingrediente(produto_id);
+create index idx_receitas_como_ingrediente_sub     on receitas_como_ingrediente(receita_ingrediente_id);
+
+-- =============================================================================
 -- PEDIDOS
 -- =============================================================================
 create table pedidos (

@@ -4,10 +4,12 @@ import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.request.CalcularCustosRequest;
 import com.api.konditor.app.controller.request.CriarReceitaRequest;
 import com.api.konditor.app.controller.request.IngredienteReceitaRequest;
+import com.api.konditor.app.controller.request.ReceitaComoIngredienteRequest;
 import com.api.konditor.app.controller.response.BuscaIngredienteResponse;
 import com.api.konditor.app.controller.response.CategoriaReceitaResponse;
 import com.api.konditor.app.controller.response.CustosCalculadosResponse;
 import com.api.konditor.app.controller.response.IngredienteReceitaResponse;
+import com.api.konditor.app.controller.response.ReceitaComoIngredienteResponse;
 import com.api.konditor.app.controller.response.ReceitaResponse;
 import com.api.konditor.app.exception.ReceitaException;
 import com.api.konditor.domain.enuns.AuditOperation;
@@ -19,6 +21,7 @@ import com.api.konditor.infra.jpa.entity.IngredientJpaEntity;
 import com.api.konditor.infra.jpa.entity.ProductCategoryJpaEntity;
 import com.api.konditor.infra.jpa.entity.ProductIngredientJpaEntity;
 import com.api.konditor.infra.jpa.entity.ProductJpaEntity;
+import com.api.konditor.infra.jpa.entity.ProductRecipeIngredientJpaEntity;
 import com.api.konditor.infra.jpa.entity.UnitConversionJpaEntity;
 import com.api.konditor.infra.jpa.entity.UnitJpaEntity;
 import com.api.konditor.infra.jpa.entity.UserJpaEntity;
@@ -28,6 +31,7 @@ import com.api.konditor.infra.jpa.repository.IngredientJpaRepository;
 import com.api.konditor.infra.jpa.repository.ProductCategoryJpaRepository;
 import com.api.konditor.infra.jpa.repository.ProductIngredientJpaRepository;
 import com.api.konditor.infra.jpa.repository.ProductJpaRepository;
+import com.api.konditor.infra.jpa.repository.ProductRecipeIngredientJpaRepository;
 import com.api.konditor.infra.jpa.repository.UnitConversionJpaRepository;
 import com.api.konditor.infra.jpa.repository.UnitJpaRepository;
 import com.api.konditor.infra.jpa.repository.UserJpaRepository;
@@ -72,6 +76,7 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
 
   private final ProductJpaRepository productRepository;
   private final ProductIngredientJpaRepository productIngredientRepository;
+  private final ProductRecipeIngredientJpaRepository productRecipeIngredientRepository;
   private final ProductCategoryJpaRepository productCategoryRepository;
   private final IngredientJpaRepository ingredientRepository;
   private final UnitJpaRepository unitRepository;
@@ -136,6 +141,8 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
 
     List<IngredienteReceitaResponse> ingredientes =
         salvarIngredientes(product, request.getIngredientes(), workspaceId);
+    List<ReceitaComoIngredienteResponse> receitasComoIngredientes =
+        salvarReceitasComoIngredientes(product, request.getReceitasComoIngredientes(), workspaceId);
     log.info(
         "[RECEITA] Receita criada id={} status={} custo={}",
         product.getId(),
@@ -151,7 +158,7 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
         "{\"nome\":\"" + product.getName() + "\",\"status\":\"" + status + "\"}",
         user);
 
-    return montarResponse(product, ingredientes);
+    return montarResponse(product, ingredientes, receitasComoIngredientes);
   }
 
   @Override
@@ -194,9 +201,12 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
 
     // Substitui ingredientes completamente (delete + re-insert)
     productIngredientRepository.deleteAllByProductId(id);
+    productRecipeIngredientRepository.deleteAllByProductId(id);
 
     List<IngredienteReceitaResponse> ingredientes =
         salvarIngredientes(product, request.getIngredientes(), workspaceId);
+    List<ReceitaComoIngredienteResponse> receitasComoIngredientes =
+        salvarReceitasComoIngredientes(product, request.getReceitasComoIngredientes(), workspaceId);
 
     aplicarCustos(product, request);
     product = productRepository.save(product);
@@ -213,7 +223,7 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
         "{\"nome\":\"" + product.getName() + "\",\"status\":\"" + product.getStatus() + "\"}",
         user);
 
-    return montarResponse(product, ingredientes);
+    return montarResponse(product, ingredientes, receitasComoIngredientes);
   }
 
   @Override
@@ -226,6 +236,8 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
     product.setStatus(RecipeStatus.publicada);
 
     List<IngredienteReceitaResponse> ingredientes = carregarIngredientesResponse(product);
+    List<ReceitaComoIngredienteResponse> receitasComoIngredientes =
+        carregarReceitasComoIngredientesResponse(product);
     log.info("[RECEITA] Receita id={} publicada com sucesso", id);
 
     UserJpaEntity user = buscarUsuario(UUID.fromString(usuario.id()));
@@ -237,7 +249,7 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
         "{\"status\":\"publicada\",\"evento\":\"publicacao\"}",
         user);
 
-    return montarResponse(product, ingredientes);
+    return montarResponse(product, ingredientes, receitasComoIngredientes);
   }
 
   @Override
@@ -246,7 +258,9 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
     UUID workspaceId = resolverWorkspaceId(usuario);
     ProductJpaEntity product = buscarReceita(id, workspaceId);
     List<IngredienteReceitaResponse> ingredientes = carregarIngredientesResponse(product);
-    return montarResponse(product, ingredientes);
+    List<ReceitaComoIngredienteResponse> receitasComoIngredientes =
+        carregarReceitasComoIngredientesResponse(product);
+    return montarResponse(product, ingredientes, receitasComoIngredientes);
   }
 
   @Override
@@ -254,15 +268,22 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
   public CustosCalculadosResponse calcularCustos(
       CalcularCustosRequest request, UsuarioAutenticado usuario) {
     UUID workspaceId = resolverWorkspaceId(usuario);
-    log.debug(
-        "[RECEITA] Calculando custos — workspaceId={} ingredientes={}",
-        workspaceId,
-        request.getIngredientes().size());
+    log.debug("[RECEITA] Calculando custos — workspaceId={}", workspaceId);
 
     BigDecimal margemDesejada = coalesce(request.getMargemDesejada(), MARGEM_PADRAO);
 
+    List<IngredienteReceitaRequest> ingredientesConvencionais =
+        coalesce(request.getIngredientes(), List.of());
+    List<ReceitaComoIngredienteRequest> receitasComoIngredientesReq =
+        coalesce(request.getReceitasComoIngredientes(), List.of());
+
+    if (ingredientesConvencionais.isEmpty() && receitasComoIngredientesReq.isEmpty()) {
+      throw new ReceitaException(
+          "Informe ao menos um ingrediente ou uma receita como ingrediente.");
+    }
+
     BigDecimal custoIngredientes = BigDecimal.ZERO;
-    for (IngredienteReceitaRequest item : request.getIngredientes()) {
+    for (IngredienteReceitaRequest item : ingredientesConvencionais) {
       IngredientJpaEntity ingredient =
           ingredientRepository
               .findByIdAndWorkspaceIdAndDeletedAtIsNull(item.getIngredienteId(), workspaceId)
@@ -275,6 +296,37 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
       BigDecimal fator = resolverFatorConversao(unit, ingredient.getUnit());
       BigDecimal custo = ingredient.getCostPerUnit().multiply(item.getQuantidade().multiply(fator));
       custoIngredientes = custoIngredientes.add(custo);
+    }
+
+    // Custo das sub-receitas: quantidade × (precoFinal / rendimentoQuantidade)
+    List<ReceitaComoIngredienteResponse> receitasComoIngredientesResp = new ArrayList<>();
+    for (ReceitaComoIngredienteRequest item : receitasComoIngredientesReq) {
+      ProductJpaEntity sub =
+          productRepository
+              .findByIdAndWorkspaceIdAndDeletedAtIsNull(item.getReceitaId(), workspaceId)
+              .orElseThrow(
+                  () ->
+                      new ReceitaException(
+                          "Receita-ingrediente não encontrada: " + item.getReceitaId()));
+      BigDecimal precoPorUnidade = calcularPrecoPorUnidade(sub);
+      BigDecimal custoLinha =
+          precoPorUnidade.multiply(item.getQuantidade()).setScale(4, RoundingMode.HALF_UP);
+      custoIngredientes = custoIngredientes.add(custoLinha);
+
+      UnitJpaEntity yUnit = sub.getYieldUnit();
+      receitasComoIngredientesResp.add(
+          ReceitaComoIngredienteResponse.builder()
+              .receitaId(sub.getId().toString())
+              .nome(sub.getName())
+              .rendimentoQuantidade(sub.getYieldQuantity())
+              .rendimentoUnidadeId(yUnit != null ? yUnit.getId().toString() : null)
+              .rendimentoUnidadeSimbolo(yUnit != null ? yUnit.getSymbol() : null)
+              .rendimentoUnidadeNome(yUnit != null ? yUnit.getName() : null)
+              .quantidade(item.getQuantidade())
+              .precoPorUnidade(precoPorUnidade.setScale(4, RoundingMode.HALF_UP))
+              .custoCalculado(custoLinha)
+              .notas(item.getNotas())
+              .build());
     }
 
     // 2. Mão de obra = valorHora × (minutos / 60)
@@ -316,6 +368,7 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
 
     return CustosCalculadosResponse.builder()
         .custoIngredientes(custoIngredientes.setScale(2, RoundingMode.HALF_UP))
+        .receitasComoIngredientes(receitasComoIngredientesResp)
         .custoMaoDeObra(custoMaoDeObra.setScale(2, RoundingMode.HALF_UP))
         .custosFixos(custosFixos.setScale(2, RoundingMode.HALF_UP))
         .custoTotal(custoTotal.setScale(2, RoundingMode.HALF_UP))
@@ -456,6 +509,66 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
   }
 
   /**
+   * Persiste as receitas usadas como ingrediente e retorna as linhas montadas com custo calculado.
+   *
+   * <p>O custo por unidade da sub-receita é: {@code precoFinal / rendimentoQuantidade}, ou seja, o
+   * preço de venda por unidade definido pelo confeiteiro.
+   */
+  private List<ReceitaComoIngredienteResponse> salvarReceitasComoIngredientes(
+      ProductJpaEntity product, List<ReceitaComoIngredienteRequest> items, UUID workspaceId) {
+
+    if (items == null || items.isEmpty()) {
+      return List.of();
+    }
+
+    List<ReceitaComoIngredienteResponse> responses = new ArrayList<>();
+    for (ReceitaComoIngredienteRequest item : items) {
+      if (item.getReceitaId().equals(product.getId())) {
+        throw new ReceitaException("Uma receita não pode usar a si mesma como ingrediente.");
+      }
+
+      ProductJpaEntity sub =
+          productRepository
+              .findByIdAndWorkspaceIdAndDeletedAtIsNull(item.getReceitaId(), workspaceId)
+              .orElseThrow(
+                  () ->
+                      new ReceitaException(
+                          "Receita-ingrediente não encontrada ou não pertence a este workspace: "
+                              + item.getReceitaId()));
+
+      BigDecimal precoPorUnidade = calcularPrecoPorUnidade(sub);
+      BigDecimal custoLinha =
+          precoPorUnidade.multiply(item.getQuantidade()).setScale(4, RoundingMode.HALF_UP);
+
+      ProductRecipeIngredientJpaEntity ri =
+          ProductRecipeIngredientJpaEntity.builder()
+              .product(product)
+              .subReceita(sub)
+              .quantidade(item.getQuantidade())
+              .notas(item.getNotas())
+              .build();
+      ri = productRecipeIngredientRepository.save(ri);
+
+      UnitJpaEntity yUnit = sub.getYieldUnit();
+      responses.add(
+          ReceitaComoIngredienteResponse.builder()
+              .id(ri.getId().toString())
+              .receitaId(sub.getId().toString())
+              .nome(sub.getName())
+              .rendimentoQuantidade(sub.getYieldQuantity())
+              .rendimentoUnidadeId(yUnit != null ? yUnit.getId().toString() : null)
+              .rendimentoUnidadeSimbolo(yUnit != null ? yUnit.getSymbol() : null)
+              .rendimentoUnidadeNome(yUnit != null ? yUnit.getName() : null)
+              .quantidade(item.getQuantidade())
+              .precoPorUnidade(precoPorUnidade.setScale(4, RoundingMode.HALF_UP))
+              .custoCalculado(custoLinha)
+              .notas(ri.getNotas())
+              .build());
+    }
+    return responses;
+  }
+
+  /**
    * Carrega os ingredientes de uma receita existente a partir do banco (com FETCH JOINs para evitar
    * N+1) e monta as responses com custo calculado.
    */
@@ -486,6 +599,48 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
                   .build();
             })
         .toList();
+  }
+
+  /** Carrega as receitas-como-ingrediente de uma receita existente com FETCH JOINs. */
+  private List<ReceitaComoIngredienteResponse> carregarReceitasComoIngredientesResponse(
+      ProductJpaEntity product) {
+    List<ReceitaComoIngredienteResponse> result = new ArrayList<>();
+    for (ProductRecipeIngredientJpaEntity ri :
+        productRecipeIngredientRepository.findAllByProductIdWithDetails(product.getId())) {
+      ProductJpaEntity sub = ri.getSubReceita();
+      BigDecimal precoPorUnidade = calcularPrecoPorUnidade(sub);
+      BigDecimal custoLinha =
+          precoPorUnidade.multiply(ri.getQuantidade()).setScale(4, RoundingMode.HALF_UP);
+      UnitJpaEntity yUnit = sub.getYieldUnit();
+      result.add(
+          ReceitaComoIngredienteResponse.builder()
+              .id(ri.getId().toString())
+              .receitaId(sub.getId().toString())
+              .nome(sub.getName())
+              .rendimentoQuantidade(sub.getYieldQuantity())
+              .rendimentoUnidadeId(yUnit != null ? yUnit.getId().toString() : null)
+              .rendimentoUnidadeSimbolo(yUnit != null ? yUnit.getSymbol() : null)
+              .rendimentoUnidadeNome(yUnit != null ? yUnit.getName() : null)
+              .quantidade(ri.getQuantidade())
+              .precoPorUnidade(precoPorUnidade.setScale(4, RoundingMode.HALF_UP))
+              .custoCalculado(custoLinha)
+              .notas(ri.getNotas())
+              .build());
+    }
+    return result;
+  }
+
+  /**
+   * Preço de venda por unidade de uma receita = {@code precoFinal / rendimentoQuantidade}. Retorna
+   * zero quando o rendimento for nulo ou zero.
+   */
+  private BigDecimal calcularPrecoPorUnidade(ProductJpaEntity receita) {
+    BigDecimal preco = coalesce(receita.getSellingPrice(), BigDecimal.ZERO);
+    BigDecimal rendimento = receita.getYieldQuantity();
+    if (rendimento == null || rendimento.compareTo(BigDecimal.ZERO) == 0) {
+      return BigDecimal.ZERO;
+    }
+    return preco.divide(rendimento, 6, RoundingMode.HALF_UP);
   }
 
   /**
@@ -595,7 +750,9 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
   // =========================================================================
 
   private ReceitaResponse montarResponse(
-      ProductJpaEntity product, List<IngredienteReceitaResponse> ingredientes) {
+      ProductJpaEntity product,
+      List<IngredienteReceitaResponse> ingredientes,
+      List<ReceitaComoIngredienteResponse> receitasComoIngredientes) {
     ProductCategoryJpaEntity cat = product.getCategory();
     UnitJpaEntity yUnit = product.getYieldUnit();
     UnitJpaEntity pesUnit = product.getUnitWeightUnit();
@@ -664,6 +821,7 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
         .rendimentoUnidadeNome(yUnit != null ? yUnit.getName() : null)
         .tempoPreparoMinutos(product.getPrepTimeMinutes())
         .ingredientes(ingredientes)
+        .receitasComoIngredientes(receitasComoIngredientes)
         .notas(product.getNotes())
         .precoFinal(product.getSellingPrice())
         .precoSugerido(product.getSuggestedPrice())

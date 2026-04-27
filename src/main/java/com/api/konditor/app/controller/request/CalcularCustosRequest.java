@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
@@ -39,9 +38,14 @@ import lombok.Setter;
 @NoArgsConstructor
 public class CalcularCustosRequest {
 
-  @NotEmpty(message = "Lista de ingredientes não pode ser vazia")
-  @Valid
-  private List<IngredienteReceitaRequest> ingredientes;
+  /**
+   * Ingredientes convencionais da receita. Pode ser vazia se {@code receitasComoIngredientes} for
+   * preenchida.
+   */
+  @Valid private List<IngredienteReceitaRequest> ingredientes;
+
+  /** Outras receitas usadas como ingrediente nesta receita. */
+  @Valid private List<ReceitaComoIngredienteRequest> receitasComoIngredientes;
 
   /** Rendimento total produzido pela receita (usado para calcular custo/preço por unidade). */
   @NotNull(message = "Rendimento é obrigatório")

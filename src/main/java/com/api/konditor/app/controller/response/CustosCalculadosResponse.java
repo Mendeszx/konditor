@@ -1,6 +1,7 @@
 package com.api.konditor.app.controller.response;
 
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -33,8 +34,13 @@ import lombok.Setter;
 @Builder
 public class CustosCalculadosResponse {
 
-  /** Custo total dos ingredientes do lote. */
+  /**
+   * Custo total dos ingredientes do lote (ingredientes convencionais + receitas-como-ingrediente).
+   */
   private BigDecimal custoIngredientes;
+
+  /** Breakdown das receitas usadas como ingrediente (custo individual de cada sub-receita). */
+  private List<ReceitaComoIngredienteResponse> receitasComoIngredientes;
 
   /** Custo de mão de obra do lote = {@code maoDeObraValorHora × (tempoPreparoMinutos / 60)}. */
   private BigDecimal custoMaoDeObra;

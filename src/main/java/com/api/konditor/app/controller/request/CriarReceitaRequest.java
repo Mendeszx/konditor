@@ -54,6 +54,9 @@ public class CriarReceitaRequest {
   /** Lista de ingredientes da receita. Pode ser vazia. */
   @Valid private List<IngredienteReceitaRequest> ingredientes;
 
+  /** Outras receitas usadas como ingrediente nesta receita. Pode ser vazia. */
+  @Valid private List<ReceitaComoIngredienteRequest> receitasComoIngredientes;
+
   /** Notas do processo de preparo / dicas. */
   private String notas;
 

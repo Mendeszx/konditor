@@ -49,6 +49,9 @@ public class ReceitaResponse {
   /** Ingredientes com quantidade, unidade e custo calculado por linha. */
   private List<IngredienteReceitaResponse> ingredientes;
 
+  /** Outras receitas usadas como ingrediente nesta receita. */
+  private List<ReceitaComoIngredienteResponse> receitasComoIngredientes;
+
   /** Notas do processo de preparo / dicas. */
   private String notas;
 

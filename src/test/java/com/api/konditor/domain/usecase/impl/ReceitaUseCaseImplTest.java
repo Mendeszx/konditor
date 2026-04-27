@@ -9,9 +9,11 @@ import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.request.CalcularCustosRequest;
 import com.api.konditor.app.controller.request.CriarReceitaRequest;
 import com.api.konditor.app.controller.request.IngredienteReceitaRequest;
+import com.api.konditor.app.controller.request.ReceitaComoIngredienteRequest;
 import com.api.konditor.app.controller.response.BuscaIngredienteResponse;
 import com.api.konditor.app.controller.response.CategoriaReceitaResponse;
 import com.api.konditor.app.controller.response.CustosCalculadosResponse;
+import com.api.konditor.app.controller.response.ReceitaComoIngredienteResponse;
 import com.api.konditor.app.controller.response.ReceitaResponse;
 import com.api.konditor.app.exception.ReceitaException;
 import com.api.konditor.domain.enuns.Plan;
@@ -22,6 +24,7 @@ import com.api.konditor.infra.jpa.entity.IngredientJpaEntity;
 import com.api.konditor.infra.jpa.entity.ProductCategoryJpaEntity;
 import com.api.konditor.infra.jpa.entity.ProductIngredientJpaEntity;
 import com.api.konditor.infra.jpa.entity.ProductJpaEntity;
+import com.api.konditor.infra.jpa.entity.ProductRecipeIngredientJpaEntity;
 import com.api.konditor.infra.jpa.entity.UnitConversionJpaEntity;
 import com.api.konditor.infra.jpa.entity.UnitJpaEntity;
 import com.api.konditor.infra.jpa.entity.UserJpaEntity;
@@ -31,6 +34,7 @@ import com.api.konditor.infra.jpa.repository.IngredientJpaRepository;
 import com.api.konditor.infra.jpa.repository.ProductCategoryJpaRepository;
 import com.api.konditor.infra.jpa.repository.ProductIngredientJpaRepository;
 import com.api.konditor.infra.jpa.repository.ProductJpaRepository;
+import com.api.konditor.infra.jpa.repository.ProductRecipeIngredientJpaRepository;
 import com.api.konditor.infra.jpa.repository.UnitConversionJpaRepository;
 import com.api.konditor.infra.jpa.repository.UnitJpaRepository;
 import com.api.konditor.infra.jpa.repository.UserJpaRepository;
@@ -60,6 +64,7 @@ class ReceitaUseCaseImplTest {
 
   @Mock private ProductJpaRepository productRepository;
   @Mock private ProductIngredientJpaRepository productIngredientRepository;
+  @Mock private ProductRecipeIngredientJpaRepository productRecipeIngredientRepository;
   @Mock private ProductCategoryJpaRepository productCategoryRepository;
   @Mock private IngredientJpaRepository ingredientRepository;
   @Mock private UnitJpaRepository unitRepository;
@@ -74,6 +79,7 @@ class ReceitaUseCaseImplTest {
   private static final UUID WORKSPACE_ID = UUID.randomUUID();
   private static final UUID USER_ID = UUID.randomUUID();
   private static final UUID PRODUCT_ID = UUID.randomUUID();
+  private static final UUID SUB_RECEITA_ID = UUID.randomUUID();
   private static final UUID ING_ID = UUID.randomUUID();
   private static final UUID UNIT_G_ID = UUID.randomUUID();
   private static final UUID UNIT_KG_ID = UUID.randomUUID();
@@ -170,6 +176,8 @@ class ReceitaUseCaseImplTest {
           .thenReturn(Optional.empty());
 
       ProductJpaEntity saved = produtoSalvo(PRODUCT_ID, "Bolo", RecipeStatus.rascunho);
+      saved.setCalculatedCost(new BigDecimal("5.0000"));
+      saved.setIngredientCost(new BigDecimal("5.0000"));
       ProductIngredientJpaEntity pi = piEntity(saved, farinha, unitG, new BigDecimal("500"));
       when(productRepository.save(any())).thenReturn(saved);
       when(productIngredientRepository.save(any())).thenReturn(pi);
@@ -269,12 +277,14 @@ class ReceitaUseCaseImplTest {
       lenient()
           .when(productIngredientRepository.findAllByProductIdWithDetails(any()))
           .thenReturn(List.of());
+      when(productRepository.save(any())).thenReturn(existente);
 
       ReceitaResponse resp = sut.atualizar(PRODUCT_ID, req, usuario);
 
       assertThat(resp.getNome()).isEqualTo("Bolo Novo");
       assertThat(resp.getStatus()).isEqualTo(RecipeStatus.publicada);
       verify(productIngredientRepository).deleteAllByProductId(PRODUCT_ID);
+      verify(productRecipeIngredientRepository).deleteAllByProductId(PRODUCT_ID);
       verify(auditLogRepository).save(any());
     }
 
@@ -299,6 +309,7 @@ class ReceitaUseCaseImplTest {
       lenient()
           .when(productIngredientRepository.findAllByProductIdWithDetails(any()))
           .thenReturn(List.of());
+      when(productRepository.save(any())).thenReturn(existente);
 
       assertThatCode(() -> sut.atualizar(PRODUCT_ID, req, usuario)).doesNotThrowAnyException();
     }
@@ -357,6 +368,7 @@ class ReceitaUseCaseImplTest {
       lenient()
           .when(productIngredientRepository.findAllByProductIdWithDetails(any()))
           .thenReturn(List.of());
+      when(productRepository.save(any())).thenReturn(existente);
 
       ReceitaResponse resp = sut.atualizar(PRODUCT_ID, req, usuario);
 
@@ -1609,6 +1621,495 @@ class ReceitaUseCaseImplTest {
   }
 
   // =========================================================================
+  // calcularCustos() — receita como ingrediente
+  // =========================================================================
+
+  @Nested
+  @DisplayName("calcularCustos() — receita como ingrediente")
+  class ReceitaComoIngredienteCalcularTest {
+
+    @Test
+    @DisplayName("Custo = quantidade × (precoFinal / rendimentoQuantidade)")
+    void custoSubReceita_formulaCorreta() {
+      // precoFinal=50, rendimento=20 → precoPorUnidade=2.50; 5 × 2.50 = 12.50
+      ProductJpaEntity sub =
+          subReceita(SUB_RECEITA_ID, "Creme", new BigDecimal("50"), new BigDecimal("20"), unitUn);
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(SUB_RECEITA_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(sub));
+
+      CalcularCustosRequest req = reqApenasSubReceitas(SUB_RECEITA_ID, new BigDecimal("5"));
+
+      CustosCalculadosResponse resp = sut.calcularCustos(req, usuario);
+
+      assertThat(resp.getCustoIngredientes()).isEqualByComparingTo("12.50");
+      assertThat(resp.getCustoTotal()).isEqualByComparingTo("12.50");
+    }
+
+    @Test
+    @DisplayName("Response inclui lista receitasComoIngredientes com precoPorUnidade e custo")
+    void response_contemListaReceitasComoIngredientes() {
+      ProductJpaEntity sub =
+          subReceita(SUB_RECEITA_ID, "Recheio", new BigDecimal("40"), new BigDecimal("8"), unitUn);
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(SUB_RECEITA_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(sub));
+
+      CalcularCustosRequest req = reqApenasSubReceitas(SUB_RECEITA_ID, new BigDecimal("2"));
+
+      CustosCalculadosResponse resp = sut.calcularCustos(req, usuario);
+
+      assertThat(resp.getReceitasComoIngredientes()).hasSize(1);
+      ReceitaComoIngredienteResponse ri = resp.getReceitasComoIngredientes().get(0);
+      assertThat(ri.getReceitaId()).isEqualTo(SUB_RECEITA_ID.toString());
+      assertThat(ri.getNome()).isEqualTo("Recheio");
+      assertThat(ri.getQuantidade()).isEqualByComparingTo("2");
+      // 40 / 8 = 5.00 por unidade
+      assertThat(ri.getPrecoPorUnidade()).isEqualByComparingTo("5.0000");
+      // 2 × 5.00 = 10.00
+      assertThat(ri.getCustoCalculado()).isEqualByComparingTo("10.0000");
+    }
+
+    @Test
+    @DisplayName("Ingrediente convencional + sub-receita: custo total é a soma correta")
+    void ingredienteConvencionalMaisSubReceita_somaCorreta() {
+      // ingrediente: 500g × R$0.01/g = 5.00
+      IngredientJpaEntity farinha = ingrediente(ING_ID, "Farinha", new BigDecimal("0.01"), unitG);
+      when(ingredientRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(ING_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(farinha));
+      when(unitRepository.findByIdAndDeletedAtIsNull(UNIT_G_ID)).thenReturn(Optional.of(unitG));
+      lenient()
+          .when(unitConversionRepository.findByFromUnitIdAndToUnitId(UNIT_G_ID, UNIT_G_ID))
+          .thenReturn(Optional.empty());
+
+      // sub-receita: 3 × (R$30/10) = 3 × 3.00 = 9.00
+      ProductJpaEntity sub =
+          subReceita(
+              SUB_RECEITA_ID, "Cobertura", new BigDecimal("30"), new BigDecimal("10"), unitUn);
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(SUB_RECEITA_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(sub));
+
+      CalcularCustosRequest req = new CalcularCustosRequest();
+      req.setIngredientes(List.of(item(ING_ID, UNIT_G_ID, "500")));
+      req.setReceitasComoIngredientes(
+          List.of(receitaComoIngredienteItem(SUB_RECEITA_ID, new BigDecimal("3"))));
+      req.setRendimentoQuantidade(new BigDecimal("1"));
+      req.setMaoDeObraValorHora(BigDecimal.ZERO);
+      req.setTempoPreparoMinutos(BigDecimal.ZERO);
+      req.setCustosFixosValor(BigDecimal.ZERO);
+      req.setCustosFixosTipo("fixo");
+
+      CustosCalculadosResponse resp = sut.calcularCustos(req, usuario);
+
+      // 5.00 + 9.00 = 14.00
+      assertThat(resp.getCustoIngredientes()).isEqualByComparingTo("14.00");
+    }
+
+    @Test
+    @DisplayName("Apenas sub-receitas, sem ingredientes convencionais: não lança exceção")
+    void apenasSubReceitas_semIngredientesConvencionais_funciona() {
+      ProductJpaEntity sub =
+          subReceita(SUB_RECEITA_ID, "Massa", new BigDecimal("20"), new BigDecimal("10"), unitUn);
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(SUB_RECEITA_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(sub));
+
+      // ingredientes = null → coalesce para List.of()
+      CalcularCustosRequest req = reqApenasSubReceitas(SUB_RECEITA_ID, new BigDecimal("2"));
+
+      assertThatCode(() -> sut.calcularCustos(req, usuario)).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("Ingredientes e sub-receitas ambos vazios: lança ReceitaException")
+    void ambosVazios_lancaExcecao() {
+      CalcularCustosRequest req = new CalcularCustosRequest();
+      req.setIngredientes(List.of());
+      req.setReceitasComoIngredientes(List.of());
+      req.setRendimentoQuantidade(new BigDecimal("1"));
+      req.setMaoDeObraValorHora(BigDecimal.ZERO);
+      req.setTempoPreparoMinutos(BigDecimal.ZERO);
+      req.setCustosFixosValor(BigDecimal.ZERO);
+      req.setCustosFixosTipo("fixo");
+
+      assertThatThrownBy(() -> sut.calcularCustos(req, usuario))
+          .isInstanceOf(ReceitaException.class)
+          .hasMessageContaining("ao menos um ingrediente");
+    }
+
+    @Test
+    @DisplayName("Ingredientes null e sub-receitas null: lança ReceitaException")
+    void ambosNull_lancaExcecao() {
+      CalcularCustosRequest req = new CalcularCustosRequest();
+      req.setIngredientes(null);
+      req.setReceitasComoIngredientes(null);
+      req.setRendimentoQuantidade(new BigDecimal("1"));
+      req.setMaoDeObraValorHora(BigDecimal.ZERO);
+      req.setTempoPreparoMinutos(BigDecimal.ZERO);
+      req.setCustosFixosValor(BigDecimal.ZERO);
+      req.setCustosFixosTipo("fixo");
+
+      assertThatThrownBy(() -> sut.calcularCustos(req, usuario))
+          .isInstanceOf(ReceitaException.class)
+          .hasMessageContaining("ao menos um ingrediente");
+    }
+
+    @Test
+    @DisplayName("Sub-receita não encontrada no workspace: lança ReceitaException")
+    void subReceitaNaoEncontrada_lancaExcecao() {
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(SUB_RECEITA_ID, WORKSPACE_ID))
+          .thenReturn(Optional.empty());
+
+      CalcularCustosRequest req = reqApenasSubReceitas(SUB_RECEITA_ID, new BigDecimal("1"));
+
+      assertThatThrownBy(() -> sut.calcularCustos(req, usuario))
+          .isInstanceOf(ReceitaException.class)
+          .hasMessageContaining("Receita-ingrediente não encontrada");
+    }
+
+    @Test
+    @DisplayName(
+        "Sub-receita com rendimentoQuantidade zero: precoPorUnidade=0, sem ArithmeticException")
+    void subReceitaRendimentoZero_custoZero_semExcecao() {
+      ProductJpaEntity sub =
+          subReceita(SUB_RECEITA_ID, "Massa", new BigDecimal("50"), BigDecimal.ZERO, unitUn);
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(SUB_RECEITA_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(sub));
+
+      CalcularCustosRequest req = reqApenasSubReceitas(SUB_RECEITA_ID, new BigDecimal("5"));
+
+      CustosCalculadosResponse resp = sut.calcularCustos(req, usuario);
+
+      assertThat(resp.getCustoIngredientes()).isEqualByComparingTo("0.00");
+    }
+
+    @Test
+    @DisplayName("Sub-receita com precoFinal null: custo tratado como zero")
+    void subReceitaPrecoFinalNull_custoZero() {
+      ProductJpaEntity sub =
+          subReceita(SUB_RECEITA_ID, "Massa", null, new BigDecimal("10"), unitUn);
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(SUB_RECEITA_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(sub));
+
+      CalcularCustosRequest req = reqApenasSubReceitas(SUB_RECEITA_ID, new BigDecimal("3"));
+
+      CustosCalculadosResponse resp = sut.calcularCustos(req, usuario);
+
+      assertThat(resp.getCustoIngredientes()).isEqualByComparingTo("0.00");
+    }
+
+    @Test
+    @DisplayName("Múltiplas sub-receitas: soma de todos os custos")
+    void multiplosSubReceitas_somaCorreta() {
+      UUID sub2Id = UUID.randomUUID();
+      // sub1: 2 × (R$20/5) = 2 × 4.00 = 8.00
+      ProductJpaEntity sub1 =
+          subReceita(SUB_RECEITA_ID, "Recheio", new BigDecimal("20"), new BigDecimal("5"), unitUn);
+      // sub2: 3 × (R$30/10) = 3 × 3.00 = 9.00
+      ProductJpaEntity sub2 =
+          subReceita(sub2Id, "Cobertura", new BigDecimal("30"), new BigDecimal("10"), unitUn);
+
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(SUB_RECEITA_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(sub1));
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(sub2Id, WORKSPACE_ID))
+          .thenReturn(Optional.of(sub2));
+
+      CalcularCustosRequest req = new CalcularCustosRequest();
+      req.setReceitasComoIngredientes(
+          List.of(
+              receitaComoIngredienteItem(SUB_RECEITA_ID, new BigDecimal("2")),
+              receitaComoIngredienteItem(sub2Id, new BigDecimal("3"))));
+      req.setRendimentoQuantidade(new BigDecimal("1"));
+      req.setMaoDeObraValorHora(BigDecimal.ZERO);
+      req.setTempoPreparoMinutos(BigDecimal.ZERO);
+      req.setCustosFixosValor(BigDecimal.ZERO);
+      req.setCustosFixosTipo("fixo");
+
+      CustosCalculadosResponse resp = sut.calcularCustos(req, usuario);
+
+      // 8.00 + 9.00 = 17.00
+      assertThat(resp.getCustoIngredientes()).isEqualByComparingTo("17.00");
+      assertThat(resp.getReceitasComoIngredientes()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("Sub-receita custo entra na base para custos fixos percentuais")
+    void subReceita_custoFixoPercentual_calculadoSobreTotal() {
+      // sub-receita: 1 × (R$100/10) = 10.00
+      ProductJpaEntity sub =
+          subReceita(SUB_RECEITA_ID, "Massa", new BigDecimal("100"), new BigDecimal("10"), unitUn);
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(SUB_RECEITA_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(sub));
+
+      CalcularCustosRequest req = reqApenasSubReceitas(SUB_RECEITA_ID, new BigDecimal("1"));
+      req.setCustosFixosValor(new BigDecimal("20"));
+      req.setCustosFixosTipo("percentual");
+
+      CustosCalculadosResponse resp = sut.calcularCustos(req, usuario);
+
+      // custo ingredientes = 10.00; 20% = 2.00
+      assertThat(resp.getCustoIngredientes()).isEqualByComparingTo("10.00");
+      assertThat(resp.getCustosFixos()).isEqualByComparingTo("2.00");
+    }
+  }
+
+  // =========================================================================
+  // criar() — receita como ingrediente
+  // =========================================================================
+
+  @Nested
+  @DisplayName("criar() — receita como ingrediente")
+  class CriarComReceitaComoIngredienteTest {
+
+    @Test
+    @DisplayName("Salva ProductRecipeIngredientJpaEntity ao criar receita com sub-receita")
+    void criar_comSubReceita_salvaEntidade() {
+      ProductJpaEntity sub =
+          subReceita(SUB_RECEITA_ID, "Creme", new BigDecimal("50"), new BigDecimal("20"), unitUn);
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(SUB_RECEITA_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(sub));
+
+      CriarReceitaRequest req = criarRequest("Bolo Recheado", null, "rascunho");
+      req.setReceitasComoIngredientes(
+          List.of(receitaComoIngredienteItem(SUB_RECEITA_ID, new BigDecimal("2"))));
+
+      ProductJpaEntity saved = produtoSalvo(PRODUCT_ID, "Bolo Recheado", RecipeStatus.rascunho);
+      when(productRepository.save(any())).thenReturn(saved);
+      mockWorkspace();
+      mockNomeUnico(false);
+      mockUnidade(UNIT_G_ID, unitG);
+      mockUsuario();
+
+      ProductRecipeIngredientJpaEntity riSaved = riEntity(saved, sub, new BigDecimal("2"));
+      when(productRecipeIngredientRepository.save(any())).thenReturn(riSaved);
+
+      sut.criar(req, usuario);
+
+      verify(productRecipeIngredientRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("Response de criar inclui receitasComoIngredientes com custo calculado")
+    void criar_comSubReceita_responseContemCusto() {
+      // precoFinal=40, rendimento=8 → 2 × (40/8) = 2 × 5.00 = 10.00
+      ProductJpaEntity sub =
+          subReceita(SUB_RECEITA_ID, "Recheio", new BigDecimal("40"), new BigDecimal("8"), unitUn);
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(SUB_RECEITA_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(sub));
+
+      CriarReceitaRequest req = criarRequest("Torta", null, "rascunho");
+      req.setReceitasComoIngredientes(
+          List.of(receitaComoIngredienteItem(SUB_RECEITA_ID, new BigDecimal("2"))));
+
+      ProductJpaEntity saved = produtoSalvo(PRODUCT_ID, "Torta", RecipeStatus.rascunho);
+      when(productRepository.save(any())).thenReturn(saved);
+      mockWorkspace();
+      mockNomeUnico(false);
+      mockUnidade(UNIT_G_ID, unitG);
+      mockUsuario();
+
+      ProductRecipeIngredientJpaEntity riSaved = riEntity(saved, sub, new BigDecimal("2"));
+      when(productRecipeIngredientRepository.save(any())).thenReturn(riSaved);
+
+      ReceitaResponse resp = sut.criar(req, usuario);
+
+      assertThat(resp.getReceitasComoIngredientes()).hasSize(1);
+      ReceitaComoIngredienteResponse ri = resp.getReceitasComoIngredientes().get(0);
+      assertThat(ri.getNome()).isEqualTo("Recheio");
+      assertThat(ri.getPrecoPorUnidade()).isEqualByComparingTo("5.0000");
+      assertThat(ri.getCustoCalculado()).isEqualByComparingTo("10.0000");
+    }
+
+    @Test
+    @DisplayName("Auto-referência: receita não pode usar a si mesma como ingrediente")
+    void criar_autoReferencia_lancaExcecao() {
+      CriarReceitaRequest req = criarRequest("Brigadeiro", null, "rascunho");
+      // a sub-receita tem o mesmo ID que será gerado para o produto salvo
+      req.setReceitasComoIngredientes(
+          List.of(receitaComoIngredienteItem(PRODUCT_ID, new BigDecimal("1"))));
+
+      ProductJpaEntity saved = produtoSalvo(PRODUCT_ID, "Brigadeiro", RecipeStatus.rascunho);
+      when(productRepository.save(any())).thenReturn(saved);
+      mockWorkspace();
+      mockNomeUnico(false);
+      mockUnidade(UNIT_G_ID, unitG);
+
+      assertThatThrownBy(() -> sut.criar(req, usuario))
+          .isInstanceOf(ReceitaException.class)
+          .hasMessageContaining("si mesma");
+    }
+
+    @Test
+    @DisplayName("Sub-receita de workspace diferente: lança ReceitaException")
+    void criar_subReceitaOutroWorkspace_lancaExcecao() {
+      // productRepository retorna empty para o workspace atual
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(SUB_RECEITA_ID, WORKSPACE_ID))
+          .thenReturn(Optional.empty());
+
+      CriarReceitaRequest req = criarRequest("Bolo", null, "rascunho");
+      req.setReceitasComoIngredientes(
+          List.of(receitaComoIngredienteItem(SUB_RECEITA_ID, new BigDecimal("1"))));
+
+      ProductJpaEntity saved = produtoSalvo(PRODUCT_ID, "Bolo", RecipeStatus.rascunho);
+      when(productRepository.save(any())).thenReturn(saved);
+      mockWorkspace();
+      mockNomeUnico(false);
+      mockUnidade(UNIT_G_ID, unitG);
+
+      assertThatThrownBy(() -> sut.criar(req, usuario))
+          .isInstanceOf(ReceitaException.class)
+          .hasMessageContaining("não pertence a este workspace");
+    }
+
+    @Test
+    @DisplayName("Sem sub-receitas: response traz lista vazia em receitasComoIngredientes")
+    void criar_semSubReceitas_retornaListaVazia() {
+      CriarReceitaRequest req = criarRequest("Pão de Mel", null, "rascunho");
+
+      ProductJpaEntity saved = produtoSalvo(PRODUCT_ID, "Pão de Mel", RecipeStatus.rascunho);
+      when(productRepository.save(any())).thenReturn(saved);
+      mockWorkspace();
+      mockNomeUnico(false);
+      mockUnidade(UNIT_G_ID, unitG);
+      mockUsuario();
+
+      ReceitaResponse resp = sut.criar(req, usuario);
+
+      assertThat(resp.getReceitasComoIngredientes()).isEmpty();
+    }
+  }
+
+  // =========================================================================
+  // atualizar() — receita como ingrediente
+  // =========================================================================
+
+  @Nested
+  @DisplayName("atualizar() — receita como ingrediente")
+  class AtualizarComReceitaComoIngredienteTest {
+
+    @Test
+    @DisplayName("Atualizar chama deleteAllByProductId no repo de sub-receitas antes de re-inserir")
+    void atualizar_deletaEReinsereSubReceitas() {
+      ProductJpaEntity existente = produtoSalvo(PRODUCT_ID, "Bolo Antigo", RecipeStatus.rascunho);
+      existente.setWorkspace(workspace);
+
+      ProductJpaEntity sub =
+          subReceita(SUB_RECEITA_ID, "Recheio", new BigDecimal("30"), new BigDecimal("6"), unitUn);
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(PRODUCT_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(existente));
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(SUB_RECEITA_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(sub));
+      mockNomeUnicoParaId(false, PRODUCT_ID);
+      mockUnidade(UNIT_G_ID, unitG);
+      mockUsuario();
+      lenient()
+          .when(productIngredientRepository.findAllByProductIdWithDetails(any()))
+          .thenReturn(List.of());
+
+      ProductRecipeIngredientJpaEntity riSaved = riEntity(existente, sub, new BigDecimal("2"));
+      when(productRecipeIngredientRepository.save(any())).thenReturn(riSaved);
+      when(productRepository.save(any())).thenReturn(existente);
+
+      CriarReceitaRequest req = criarRequest("Bolo Novo", null, "rascunho");
+      req.setReceitasComoIngredientes(
+          List.of(receitaComoIngredienteItem(SUB_RECEITA_ID, new BigDecimal("2"))));
+
+      ReceitaResponse resp = sut.atualizar(PRODUCT_ID, req, usuario);
+
+      verify(productRecipeIngredientRepository).deleteAllByProductId(PRODUCT_ID);
+      verify(productRecipeIngredientRepository).save(any());
+      assertThat(resp.getReceitasComoIngredientes()).hasSize(1);
+    }
+  }
+
+  // =========================================================================
+  // buscarPorId() — receita como ingrediente
+  // =========================================================================
+
+  @Nested
+  @DisplayName("buscarPorId() — receita como ingrediente")
+  class BuscarPorIdComReceitaComoIngredienteTest {
+
+    @Test
+    @DisplayName("Carrega sub-receitas da receita existente e mapeia custo corretamente")
+    void buscarPorId_comSubReceita_mapeiaCusto() {
+      ProductJpaEntity product = produtoSalvo(PRODUCT_ID, "Bolo", RecipeStatus.publicada);
+      product.setWorkspace(workspace);
+
+      // sub-receita: precoFinal=60, rendimento=12 → 1 × (60/12) = 5.00
+      ProductJpaEntity sub =
+          subReceita(SUB_RECEITA_ID, "Creme", new BigDecimal("60"), new BigDecimal("12"), unitUn);
+      ProductRecipeIngredientJpaEntity ri = riEntity(product, sub, new BigDecimal("1"));
+
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(PRODUCT_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(product));
+      when(productIngredientRepository.findAllByProductIdWithDetails(PRODUCT_ID))
+          .thenReturn(List.of());
+      when(productRecipeIngredientRepository.findAllByProductIdWithDetails(PRODUCT_ID))
+          .thenReturn(List.of(ri));
+
+      ReceitaResponse resp = sut.buscarPorId(PRODUCT_ID, usuario);
+
+      assertThat(resp.getReceitasComoIngredientes()).hasSize(1);
+      ReceitaComoIngredienteResponse riResp = resp.getReceitasComoIngredientes().get(0);
+      assertThat(riResp.getNome()).isEqualTo("Creme");
+      assertThat(riResp.getPrecoPorUnidade()).isEqualByComparingTo("5.0000");
+      assertThat(riResp.getCustoCalculado()).isEqualByComparingTo("5.0000");
+    }
+
+    @Test
+    @DisplayName("Sem sub-receitas: retorna lista vazia")
+    void buscarPorId_semSubReceitas_listaVazia() {
+      ProductJpaEntity product = produtoSalvo(PRODUCT_ID, "Torta", RecipeStatus.publicada);
+      product.setWorkspace(workspace);
+
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(PRODUCT_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(product));
+      when(productIngredientRepository.findAllByProductIdWithDetails(PRODUCT_ID))
+          .thenReturn(List.of());
+      when(productRecipeIngredientRepository.findAllByProductIdWithDetails(PRODUCT_ID))
+          .thenReturn(List.of());
+
+      ReceitaResponse resp = sut.buscarPorId(PRODUCT_ID, usuario);
+
+      assertThat(resp.getReceitasComoIngredientes()).isEmpty();
+    }
+  }
+
+  // =========================================================================
+  // publicar() — receita como ingrediente
+  // =========================================================================
+
+  @Nested
+  @DisplayName("publicar() — receita como ingrediente")
+  class PublicarComReceitaComoIngredienteTest {
+
+    @Test
+    @DisplayName("Publicar carrega sub-receitas e as inclui na response")
+    void publicar_comSubReceita_responseInclui() {
+      ProductJpaEntity product = produtoSalvo(PRODUCT_ID, "Bolo", RecipeStatus.rascunho);
+      product.setWorkspace(workspace);
+
+      // sub-receita: precoFinal=20, rendimento=4 → 2 × 5.00 = 10.00
+      ProductJpaEntity sub =
+          subReceita(SUB_RECEITA_ID, "Massa", new BigDecimal("20"), new BigDecimal("4"), unitUn);
+      ProductRecipeIngredientJpaEntity ri = riEntity(product, sub, new BigDecimal("2"));
+
+      when(productRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(PRODUCT_ID, WORKSPACE_ID))
+          .thenReturn(Optional.of(product));
+      when(productIngredientRepository.findAllByProductIdWithDetails(PRODUCT_ID))
+          .thenReturn(List.of());
+      when(productRecipeIngredientRepository.findAllByProductIdWithDetails(PRODUCT_ID))
+          .thenReturn(List.of(ri));
+      mockUsuario();
+
+      ReceitaResponse resp = sut.publicar(PRODUCT_ID, usuario);
+
+      assertThat(resp.getStatus()).isEqualTo(RecipeStatus.publicada);
+      assertThat(resp.getReceitasComoIngredientes()).hasSize(1);
+      assertThat(resp.getReceitasComoIngredientes().get(0).getCustoCalculado())
+          .isEqualByComparingTo("10.0000");
+    }
+  }
+
+  // =========================================================================
   // Helpers de setup
   // =========================================================================
 
@@ -1700,6 +2201,37 @@ class ReceitaUseCaseImplTest {
         .build();
   }
 
+  /**
+   * Cria uma sub-receita (ProductJpaEntity) com os campos necessários para o cálculo de custo:
+   * precoFinal, rendimentoQuantidade e yieldUnit.
+   */
+  private static ProductJpaEntity subReceita(
+      UUID id, String nome, BigDecimal precoFinal, BigDecimal rendimento, UnitJpaEntity yieldUnit) {
+    ProductJpaEntity p =
+        ProductJpaEntity.builder()
+            .id(id)
+            .name(nome)
+            .status(RecipeStatus.publicada)
+            .sellingPrice(precoFinal)
+            .yieldQuantity(rendimento)
+            .yieldUnit(yieldUnit)
+            .calculatedCost(BigDecimal.ZERO)
+            .suggestedPrice(BigDecimal.ZERO)
+            .build();
+    p.setActive(true);
+    return p;
+  }
+
+  private static ProductRecipeIngredientJpaEntity riEntity(
+      ProductJpaEntity product, ProductJpaEntity sub, BigDecimal quantidade) {
+    return ProductRecipeIngredientJpaEntity.builder()
+        .id(UUID.randomUUID())
+        .product(product)
+        .subReceita(sub)
+        .quantidade(quantidade)
+        .build();
+  }
+
   // =========================================================================
   // Builders de requests
   // =========================================================================
@@ -1728,6 +2260,29 @@ class ReceitaUseCaseImplTest {
       String nome, UUID ingId, UUID unitId, BigDecimal qtd, String status) {
     CriarReceitaRequest r = criarRequest(nome, null, status);
     r.setIngredientes(List.of(item(ingId, unitId, qtd.toPlainString())));
+    return r;
+  }
+
+  /**
+   * Monta um CalcularCustosRequest apenas com sub-receitas (sem ingredientes convencionais).
+   * Parâmetros de custo fixo, MO e margem zerados para isolar o comportamento da sub-receita.
+   */
+  private static CalcularCustosRequest reqApenasSubReceitas(UUID subId, BigDecimal quantidade) {
+    CalcularCustosRequest req = new CalcularCustosRequest();
+    req.setReceitasComoIngredientes(List.of(receitaComoIngredienteItem(subId, quantidade)));
+    req.setRendimentoQuantidade(new BigDecimal("1"));
+    req.setMaoDeObraValorHora(BigDecimal.ZERO);
+    req.setTempoPreparoMinutos(BigDecimal.ZERO);
+    req.setCustosFixosValor(BigDecimal.ZERO);
+    req.setCustosFixosTipo("fixo");
+    return req;
+  }
+
+  private static ReceitaComoIngredienteRequest receitaComoIngredienteItem(
+      UUID receitaId, BigDecimal quantidade) {
+    ReceitaComoIngredienteRequest r = new ReceitaComoIngredienteRequest();
+    r.setReceitaId(receitaId);
+    r.setQuantidade(quantidade);
     return r;
   }
 
