@@ -43,14 +43,6 @@ public class CriarIngredienteRequest {
   @PositiveOrZero(message = "Custo por unidade deve ser zero ou positivo")
   private BigDecimal precoPorUnidade;
 
-  /** Quantidade atual em estoque. Opcional (null = não controla estoque). */
-  @PositiveOrZero(message = "Quantidade em estoque deve ser zero ou positiva")
-  private BigDecimal estoqueQuantidade;
-
-  /** Quantidade mínima para disparar alerta de estoque crítico. Opcional. */
-  @PositiveOrZero(message = "Estoque mínimo de alerta deve ser zero ou positivo")
-  private BigDecimal estoqueAlertaMinimo;
-
   /** Notas / observações adicionais. Opcional. */
   private String notas;
 }

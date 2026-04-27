@@ -1,6 +1,5 @@
 package com.api.konditor.infra.jpa.entity;
 
-import com.api.konditor.domain.enuns.OrderStatus;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -9,9 +8,9 @@ import java.time.LocalTime;
 import java.util.UUID;
 import lombok.*;
 
-/** Entidade JPA que mapeia a tabela {@code orders}. */
+/** Entidade JPA que mapeia a tabela {@code pedidos}. */
 @Entity
-@Table(name = "orders", schema = "konditor")
+@Table(name = "pedidos", schema = "konditor")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -25,66 +24,59 @@ public class OrderJpaEntity {
   private UUID id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "workspace_id", nullable = false)
+  @JoinColumn(name = "espaco_trabalho_id", nullable = false)
   private WorkspaceJpaEntity workspace;
 
-  // --- Cliente ---
-  @Column(name = "client_name")
+  @Column(name = "nome_cliente")
   private String clientName;
 
-  @Column(name = "client_phone")
+  @Column(name = "telefone_cliente")
   private String clientPhone;
 
-  // --- Status e entrega ---
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  private OrderStatus status;
+  @Column(name = "status", nullable = false)
+  private String status;
 
-  @Column(name = "delivery_date")
+  @Column(name = "data_entrega")
   private LocalDate deliveryDate;
 
-  @Column(name = "delivery_time")
+  @Column(name = "hora_entrega")
   private LocalTime deliveryTime;
 
-  @Column(name = "is_delivery", nullable = false)
+  @Column(name = "eh_entrega", nullable = false)
   private boolean isDelivery;
 
-  @Column(name = "delivery_address", columnDefinition = "text")
+  @Column(name = "endereco_entrega", columnDefinition = "text")
   private String deliveryAddress;
 
-  // --- Valores ---
-  @Column(name = "total_price", precision = 19, scale = 2)
+  @Column(name = "preco_total", precision = 19, scale = 4)
   private BigDecimal totalPrice;
 
-  @Column(name = "discount_cents", nullable = false)
+  @Column(name = "desconto_centavos", nullable = false)
   private Integer discountCents;
 
-  @Column(columnDefinition = "text")
+  @Column(name = "notas", columnDefinition = "text")
   private String notes;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
+  @Column(name = "criado_em", nullable = false, updatable = false)
   private Instant createdAt;
 
-  @Column(name = "updated_at")
+  @Column(name = "atualizado_em")
   private Instant updatedAt;
 
-  @Column(name = "deleted_at")
+  @Column(name = "excluido_em")
   private Instant deletedAt;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "created_by")
+  @JoinColumn(name = "criado_por")
   private UserJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "updated_by")
+  @JoinColumn(name = "atualizado_por")
   private UserJpaEntity updatedBy;
 
   @PrePersist
   void prePersist() {
     this.createdAt = Instant.now();
-    if (this.status == null) {
-      this.status = OrderStatus.pending;
-    }
     if (this.discountCents == null) {
       this.discountCents = 0;
     }

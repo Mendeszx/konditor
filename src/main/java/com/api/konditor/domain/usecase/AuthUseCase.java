@@ -1,4 +1,4 @@
-package com.api.konditor.domain.useCase;
+package com.api.konditor.domain.usecase;
 
 import com.api.konditor.app.controller.response.GoogleAuthResponse;
 import com.api.konditor.app.controller.response.RenovarTokenResponse;

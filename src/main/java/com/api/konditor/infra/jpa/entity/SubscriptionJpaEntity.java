@@ -6,9 +6,9 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
-/** Entidade JPA que mapeia a tabela {@code subscriptions}. */
+/** Entidade JPA que mapeia a tabela {@code assinaturas}. */
 @Entity
-@Table(name = "subscriptions", schema = "konditor")
+@Table(name = "assinaturas", schema = "konditor")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,56 +22,59 @@ public class SubscriptionJpaEntity {
   private UUID id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "workspace_id", nullable = false)
+  @JoinColumn(name = "espaco_trabalho_id", nullable = false)
   private WorkspaceJpaEntity workspace;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "plan_id", nullable = false)
+  @JoinColumn(name = "plano_id", nullable = false)
   private PlanDetailsJpaEntity plan;
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
+  @Column(name = "status", nullable = false)
   private SubscriptionStatus status;
 
-  @Column(name = "started_at")
+  @Column(name = "iniciado_em")
   private Instant startedAt;
 
-  @Column(name = "ends_at")
+  @Column(name = "termina_em")
   private Instant endsAt;
 
-  @Column(name = "trial_ends_at")
+  @Column(name = "trial_termina_em")
   private Instant trialEndsAt;
 
   /** ID da assinatura no gateway de pagamento externo (ex: Stripe, Pagar.me). */
-  @Column(name = "external_subscription_id", unique = true)
+  @Column(name = "id_assinatura_externo", unique = true)
   private String externalSubscriptionId;
 
-  @Column(name = "last_payment_at")
+  @Column(name = "ultimo_pagamento_em")
   private Instant lastPaymentAt;
 
-  @Column(name = "next_billing_at")
+  @Column(name = "proxima_cobranca_em")
   private Instant nextBillingAt;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
+  @Column(name = "criado_em", nullable = false, updatable = false)
   private Instant createdAt;
 
-  @Column(name = "updated_at")
+  @Column(name = "atualizado_em")
   private Instant updatedAt;
 
-  @Column(name = "deleted_at")
+  @Column(name = "excluido_em")
   private Instant deletedAt;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "created_by")
+  @JoinColumn(name = "criado_por")
   private UserJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "updated_by")
+  @JoinColumn(name = "atualizado_por")
   private UserJpaEntity updatedBy;
 
   @PrePersist
   void prePersist() {
     this.createdAt = Instant.now();
+    if (this.status == null) {
+      this.status = SubscriptionStatus.active;
+    }
   }
 
   @PreUpdate

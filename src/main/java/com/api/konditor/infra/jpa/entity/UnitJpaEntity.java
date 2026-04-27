@@ -6,9 +6,9 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
-/** Entidade JPA que mapeia a tabela {@code units}. */
+/** Entidade JPA que mapeia a tabela {@code unidades}. */
 @Entity
-@Table(name = "units", schema = "konditor")
+@Table(name = "unidades", schema = "konditor")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,34 +21,34 @@ public class UnitJpaEntity {
   @Column(columnDefinition = "uuid", updatable = false, nullable = false)
   private UUID id;
 
-  @Column(nullable = false)
+  @Column(name = "nome", nullable = false)
   private String name;
 
-  @Column(nullable = false, unique = true)
+  @Column(name = "simbolo", nullable = false, unique = true)
   private String symbol;
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
+  @Column(name = "tipo", nullable = false)
   private UnitType type;
 
-  @Column(name = "is_base")
+  @Column(name = "base")
   private Boolean isBase;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
+  @Column(name = "criado_em", nullable = false, updatable = false)
   private Instant createdAt;
 
-  @Column(name = "updated_at")
+  @Column(name = "atualizado_em")
   private Instant updatedAt;
 
-  @Column(name = "deleted_at")
+  @Column(name = "excluido_em")
   private Instant deletedAt;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "created_by")
+  @JoinColumn(name = "criado_por")
   private UserJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "updated_by")
+  @JoinColumn(name = "atualizado_por")
   private UserJpaEntity updatedBy;
 
   @PrePersist

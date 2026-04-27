@@ -5,12 +5,9 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
-/**
- * Entidade JPA que mapeia a tabela {@code users}. Isolada na camada de infraestrutura — o domínio
- * nunca conhece esta classe.
- */
+/** Entidade JPA que mapeia a tabela {@code usuarios}. */
 @Entity
-@Table(name = "users", schema = "konditor")
+@Table(name = "usuarios", schema = "konditor")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,35 +23,35 @@ public class UserJpaEntity {
   @Column(nullable = false, unique = true)
   private String email;
 
-  @Column private String name;
+  @Column private String nome;
 
-  @Column(name = "google_id", unique = true)
-  private String googleId;
+  @Column(name = "id_google", unique = true)
+  private String idGoogle;
 
-  @Column private String locale;
+  @Column private String idioma;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private Instant createdAt;
+  @Column(name = "criado_em", nullable = false, updatable = false)
+  private Instant criadoEm;
 
-  @Column(name = "updated_at")
-  private Instant updatedAt;
+  @Column(name = "atualizado_em")
+  private Instant atualizadoEm;
 
-  @Column(name = "deleted_at")
-  private Instant deletedAt;
+  @Column(name = "excluido_em")
+  private Instant excluidoEm;
 
-  @Column(name = "created_by")
-  private UUID createdBy;
+  @Column(name = "criado_por")
+  private UUID criadoPor;
 
-  @Column(name = "updated_by")
-  private UUID updatedBy;
+  @Column(name = "atualizado_por")
+  private UUID atualizadoPor;
 
   @PrePersist
   void prePersist() {
-    this.createdAt = Instant.now();
+    this.criadoEm = Instant.now();
   }
 
   @PreUpdate
   void preUpdate() {
-    this.updatedAt = Instant.now();
+    this.atualizadoEm = Instant.now();
   }
 }

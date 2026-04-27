@@ -8,14 +8,15 @@ import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-/** Entidade JPA que mapeia a tabela {@code audit_logs}. */
+/** Entidade JPA que mapeia a tabela {@code logs_auditoria}. */
 @Entity
 @Table(
-    name = "audit_logs",
+    name = "logs_auditoria",
     schema = "konditor",
     indexes = {
-      @Index(name = "idx_audit_entity", columnList = "entity_name, entity_id"),
-      @Index(name = "idx_audit_workspace", columnList = "workspace_id")
+      @Index(name = "idx_auditoria_entidade", columnList = "nome_entidade, id_entidade"),
+      @Index(name = "idx_auditoria_espaco", columnList = "espaco_trabalho_id"),
+      @Index(name = "idx_auditoria_realizado_em", columnList = "realizado_em")
     })
 @Getter
 @Setter
@@ -30,52 +31,53 @@ public class AuditLogJpaEntity {
   private UUID id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "workspace_id", nullable = false)
+  @JoinColumn(name = "espaco_trabalho_id", nullable = false)
   private WorkspaceJpaEntity workspace;
 
-  @Column(name = "entity_name", nullable = false)
+  @Column(name = "nome_entidade", nullable = false)
   private String entityName;
 
-  @Column(name = "entity_id", nullable = false)
+  @Column(name = "id_entidade", nullable = false, columnDefinition = "uuid")
   private UUID entityId;
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
+  @Column(name = "operacao", nullable = false)
   private AuditOperation operation;
 
   @JdbcTypeCode(SqlTypes.JSON)
-  @Column(name = "data_before", columnDefinition = "jsonb")
+  @Column(name = "dados_antes", columnDefinition = "jsonb")
   private String dataBefore;
 
   @JdbcTypeCode(SqlTypes.JSON)
-  @Column(name = "data_after", columnDefinition = "jsonb")
+  @Column(name = "dados_depois", columnDefinition = "jsonb")
   private String dataAfter;
 
   @JdbcTypeCode(SqlTypes.JSON)
-  @Column(name = "changed_fields", columnDefinition = "jsonb")
+  @Column(name = "campos_alterados", columnDefinition = "jsonb")
   private String changedFields;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "performed_by")
+  @JoinColumn(name = "realizado_por")
   private UserJpaEntity performedBy;
 
-  @Column(name = "performed_at")
+  @Column(name = "realizado_em", nullable = false, updatable = false)
   private Instant performedAt;
 
-  @Column(name = "request_id")
+  @Column(name = "id_requisicao")
   private String requestId;
 
-  @Column(name = "ip_address")
+  @Column(name = "endereco_ip")
   private String ipAddress;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
+  @Column(name = "criado_em", nullable = false, updatable = false)
   private Instant createdAt;
 
   @PrePersist
   void prePersist() {
-    this.createdAt = Instant.now();
+    Instant now = Instant.now();
+    this.createdAt = now;
     if (this.performedAt == null) {
-      this.performedAt = Instant.now();
+      this.performedAt = now;
     }
   }
 }

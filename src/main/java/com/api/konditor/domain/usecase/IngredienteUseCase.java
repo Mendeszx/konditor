@@ -1,8 +1,7 @@
-package com.api.konditor.domain.useCase;
+package com.api.konditor.domain.usecase;
 
 import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.request.CriarIngredienteRequest;
-import com.api.konditor.app.controller.response.AlertaMercadoItemResponse;
 import com.api.konditor.app.controller.response.CategoriaIngredienteResponse;
 import com.api.konditor.app.controller.response.IngredienteCardResponse;
 import com.api.konditor.app.controller.response.IngredienteResponse;
@@ -30,19 +29,8 @@ public interface IngredienteUseCase {
   PaginaResponse<IngredienteCardResponse> listar(
       UsuarioAutenticado usuario, UUID categoriaId, int pagina, int tamanho);
 
-  /**
-   * Retorna os dados agregados para os painéis de resumo: total de ingredientes cadastrados e
-   * quantidade em estoque crítico.
-   */
+  /** Retorna o total de ingredientes cadastrados no workspace. */
   IngredienteResumoResponse resumo(UsuarioAutenticado usuario);
-
-  /**
-   * Retorna variações de preço recentes para o painel de Alerta de Mercado.
-   *
-   * <p>Dados parcialmente mockados enquanto o esquema de monitoramento de preços de mercado externo
-   * não está disponível.
-   */
-  List<AlertaMercadoItemResponse> alertasMercado(UsuarioAutenticado usuario);
 
   /**
    * Retorna todas as categorias de ingrediente do workspace, usadas para preencher os chips de

@@ -5,12 +5,12 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
-/** Entidade JPA que mapeia a tabela {@code workspace_members}. */
+/** Entidade JPA que mapeia a tabela {@code membros_espaco_trabalho}. */
 @Entity
 @Table(
-    name = "workspace_members",
+    name = "membros_espaco_trabalho",
     schema = "konditor",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"workspace_id", "user_id"}))
+    uniqueConstraints = @UniqueConstraint(columnNames = {"espaco_trabalho_id", "usuario_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,48 +24,48 @@ public class WorkspaceMemberJpaEntity {
   private UUID id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "workspace_id", nullable = false)
-  private WorkspaceJpaEntity workspace;
+  @JoinColumn(name = "espaco_trabalho_id", nullable = false)
+  private WorkspaceJpaEntity espacoTrabalho;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id", nullable = false)
-  private UserJpaEntity user;
+  @JoinColumn(name = "usuario_id", nullable = false)
+  private UserJpaEntity usuario;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "role", referencedColumnName = "name", nullable = false)
-  private RoleJpaEntity role;
+  @JoinColumn(name = "papel", referencedColumnName = "nome", nullable = false)
+  private RoleJpaEntity papel;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "invited_by")
-  private UserJpaEntity invitedBy;
+  @JoinColumn(name = "convidado_por")
+  private UserJpaEntity convidadoPor;
 
-  @Column(name = "joined_at")
-  private Instant joinedAt;
+  @Column(name = "entrou_em")
+  private Instant entrouEm;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private Instant createdAt;
+  @Column(name = "criado_em", nullable = false, updatable = false)
+  private Instant criadoEm;
 
-  @Column(name = "updated_at")
-  private Instant updatedAt;
+  @Column(name = "atualizado_em")
+  private Instant atualizadoEm;
 
-  @Column(name = "deleted_at")
-  private Instant deletedAt;
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "created_by")
-  private UserJpaEntity createdBy;
+  @Column(name = "excluido_em")
+  private Instant excluidoEm;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "updated_by")
-  private UserJpaEntity updatedBy;
+  @JoinColumn(name = "criado_por")
+  private UserJpaEntity criadoPor;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "atualizado_por")
+  private UserJpaEntity atualizadoPor;
 
   @PrePersist
   void prePersist() {
-    this.createdAt = Instant.now();
+    this.criadoEm = Instant.now();
   }
 
   @PreUpdate
   void preUpdate() {
-    this.updatedAt = Instant.now();
+    this.atualizadoEm = Instant.now();
   }
 }

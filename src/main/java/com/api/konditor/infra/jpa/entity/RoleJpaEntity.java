@@ -4,14 +4,9 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import lombok.*;
 
-/**
- * Entidade JPA que mapeia a tabela {@code roles}.
- *
- * <p>Armazena os papéis disponíveis dentro de um workspace com suas permissões granulares e nível
- * hierárquico.
- */
+/** Entidade JPA que mapeia a tabela {@code papeis}. */
 @Entity
-@Table(name = "roles", schema = "konditor")
+@Table(name = "papeis", schema = "konditor")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,104 +17,104 @@ public class RoleJpaEntity {
   /** Identificador técnico do papel (ex: owner, admin, member). */
   @Id
   @Column(nullable = false, unique = true)
-  private String name;
+  private String nome;
 
   /** Nome exibido ao usuário (ex: Proprietário, Administrador, Membro). */
-  @Column(name = "display_name", nullable = false)
-  private String displayName;
+  @Column(name = "nome_exibido", nullable = false)
+  private String nomeExibido;
 
   @Column(columnDefinition = "text")
-  private String description;
+  private String descricao;
 
   /** Nível hierárquico: owner=100, admin=50, member=10. Quanto maior, mais permissões possui. */
-  @Column(name = "hierarchy_level", nullable = false)
-  private Integer hierarchyLevel;
+  @Column(name = "nivel_hierarquia", nullable = false)
+  private Integer nivelHierarquia;
 
   // -------------------------------------------------------------------------
   // Gerenciamento do workspace
   // -------------------------------------------------------------------------
 
   /** Pode renomear ou excluir o workspace. */
-  @Column(name = "can_manage_workspace", nullable = false)
-  private boolean canManageWorkspace;
+  @Column(name = "pode_gerenciar_espaco_trabalho", nullable = false)
+  private boolean podeGerenciarEspacoTrabalho;
 
   /** Pode convidar, remover e alterar o papel de membros. */
-  @Column(name = "can_manage_members", nullable = false)
-  private boolean canManageMembers;
+  @Column(name = "pode_gerenciar_membros", nullable = false)
+  private boolean podeGerenciarMembros;
 
   /** Pode alterar o plano ou assinatura do workspace. */
-  @Column(name = "can_manage_plan", nullable = false)
-  private boolean canManagePlan;
+  @Column(name = "pode_gerenciar_plano", nullable = false)
+  private boolean podeGerenciarPlano;
 
   // -------------------------------------------------------------------------
   // Ingredientes
   // -------------------------------------------------------------------------
 
-  @Column(name = "can_create_ingredients", nullable = false)
-  private boolean canCreateIngredients;
+  @Column(name = "pode_criar_ingredientes", nullable = false)
+  private boolean podeCriarIngredientes;
 
-  @Column(name = "can_edit_ingredients", nullable = false)
-  private boolean canEditIngredients;
+  @Column(name = "pode_editar_ingredientes", nullable = false)
+  private boolean podeEditarIngredientes;
 
-  @Column(name = "can_delete_ingredients", nullable = false)
-  private boolean canDeleteIngredients;
+  @Column(name = "pode_excluir_ingredientes", nullable = false)
+  private boolean podeExcluirIngredientes;
 
   // -------------------------------------------------------------------------
   // Produtos / Receitas
   // -------------------------------------------------------------------------
 
-  @Column(name = "can_create_products", nullable = false)
-  private boolean canCreateProducts;
+  @Column(name = "pode_criar_produtos", nullable = false)
+  private boolean podeCriarProdutos;
 
-  @Column(name = "can_edit_products", nullable = false)
-  private boolean canEditProducts;
+  @Column(name = "pode_editar_produtos", nullable = false)
+  private boolean podeEditarProdutos;
 
-  @Column(name = "can_delete_products", nullable = false)
-  private boolean canDeleteProducts;
+  @Column(name = "pode_excluir_produtos", nullable = false)
+  private boolean podeExcluirProdutos;
 
   // -------------------------------------------------------------------------
   // Pedidos
   // -------------------------------------------------------------------------
 
-  @Column(name = "can_create_orders", nullable = false)
-  private boolean canCreateOrders;
+  @Column(name = "pode_criar_pedidos", nullable = false)
+  private boolean podeCriarPedidos;
 
-  @Column(name = "can_edit_orders", nullable = false)
-  private boolean canEditOrders;
+  @Column(name = "pode_editar_pedidos", nullable = false)
+  private boolean podeEditarPedidos;
 
-  @Column(name = "can_delete_orders", nullable = false)
-  private boolean canDeleteOrders;
+  @Column(name = "pode_excluir_pedidos", nullable = false)
+  private boolean podeExcluirPedidos;
 
   // -------------------------------------------------------------------------
   // Relatórios e custos
   // -------------------------------------------------------------------------
 
   /** Pode visualizar relatórios de vendas e produção. */
-  @Column(name = "can_view_reports", nullable = false)
-  private boolean canViewReports;
+  @Column(name = "pode_ver_relatorios", nullable = false)
+  private boolean podeVerRelatorios;
 
   /** Pode visualizar custos de ingredientes e margem dos produtos. */
-  @Column(name = "can_view_costs", nullable = false)
-  private boolean canViewCosts;
+  @Column(name = "pode_ver_custos", nullable = false)
+  private boolean podeVerCustos;
 
   // -------------------------------------------------------------------------
   // Auditoria
   // -------------------------------------------------------------------------
 
   /** Pode visualizar o histórico de auditoria do workspace. */
-  @Column(name = "can_view_audit_log", nullable = false)
-  private boolean canViewAuditLog;
+  @Column(name = "pode_ver_log_auditoria", nullable = false)
+  private boolean podeVerLogAuditoria;
 
   // -------------------------------------------------------------------------
 
-  @Column(name = "is_active", nullable = false)
-  private boolean isActive;
+  @Column(name = "ativo", nullable = false)
+  private boolean ativo;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private Instant createdAt;
+  @Column(name = "criado_em", nullable = false, updatable = false)
+  private Instant criadoEm;
 
   @PrePersist
   void prePersist() {
-    this.createdAt = Instant.now();
+    this.criadoEm = Instant.now();
   }
 }

@@ -5,14 +5,9 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
-/**
- * Entidade JPA que mapeia a tabela {@code ingredient_categories}.
- *
- * <p>Categorias <strong>globais</strong> de ingrediente (ex: Chocolate, Laticínio, Farinha).
- * Compartilhadas entre todos os workspaces — não pertencem a nenhum workspace específico.
- */
+/** Entidade JPA que mapeia a tabela {@code categorias_ingrediente}. */
 @Entity
-@Table(name = "ingredient_categories", schema = "konditor")
+@Table(name = "categorias_ingrediente", schema = "konditor")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -25,26 +20,27 @@ public class IngredientCategoryJpaEntity {
   @Column(columnDefinition = "uuid", updatable = false, nullable = false)
   private UUID id;
 
-  @Column(nullable = false, unique = true)
+  @Column(name = "nome", nullable = false, unique = true)
   private String name;
 
-  @Column private String color;
+  @Column(name = "cor")
+  private String color;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
+  @Column(name = "criado_em", nullable = false, updatable = false)
   private Instant createdAt;
 
-  @Column(name = "updated_at")
+  @Column(name = "atualizado_em")
   private Instant updatedAt;
 
-  @Column(name = "deleted_at")
+  @Column(name = "excluido_em")
   private Instant deletedAt;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "created_by")
+  @JoinColumn(name = "criado_por")
   private UserJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "updated_by")
+  @JoinColumn(name = "atualizado_por")
   private UserJpaEntity updatedBy;
 
   @PrePersist

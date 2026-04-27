@@ -5,15 +5,9 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
-/** Entidade JPA que mapeia a tabela {@code refresh_tokens}. Isolada na camada de infraestrutura. */
+/** Entidade JPA que mapeia a tabela {@code tokens_atualizacao}. */
 @Entity
-@Table(
-    name = "refresh_tokens",
-    schema = "konditor",
-    indexes = {
-      @Index(name = "idx_refresh_token_value", columnList = "token"),
-      @Index(name = "idx_refresh_token_user", columnList = "user_id")
-    })
+@Table(name = "tokens_atualizacao", schema = "konditor")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,25 +17,27 @@ public class RefreshTokenJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(columnDefinition = "uuid", updatable = false, nullable = false)
   private UUID id;
 
-  @Column(nullable = false, unique = true)
+  @Column(name = "token", nullable = false, unique = true, columnDefinition = "text")
   private String token;
 
-  @Column(name = "user_id", nullable = false)
+  @Column(name = "usuario_id", nullable = false)
   private UUID userId;
 
-  @Column(name = "expires_at", nullable = false)
+  @Column(name = "expira_em", nullable = false)
   private Instant expiresAt;
 
-  @Column(nullable = false)
+  @Column(name = "revogado", nullable = false)
   private boolean revoked;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
+  @Column(name = "criado_em", nullable = false, updatable = false)
   private Instant createdAt;
 
   @PrePersist
   void prePersist() {
     this.createdAt = Instant.now();
+    this.revoked = false;
   }
 }

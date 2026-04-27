@@ -5,9 +5,9 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
-/** Entidade JPA que mapeia a tabela {@code workspaces}. */
+/** Entidade JPA que mapeia a tabela {@code espacos_trabalho}. */
 @Entity
-@Table(name = "workspaces", schema = "konditor")
+@Table(name = "espacos_trabalho", schema = "konditor")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,44 +21,44 @@ public class WorkspaceJpaEntity {
   private UUID id;
 
   @Column(nullable = false)
-  private String name;
+  private String nome;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "owner_id", nullable = false)
-  private UserJpaEntity owner;
+  @JoinColumn(name = "proprietario_id", nullable = false)
+  private UserJpaEntity proprietario;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "plan_id", nullable = false)
-  private PlanDetailsJpaEntity plan;
+  @JoinColumn(name = "plano_id", nullable = false)
+  private PlanDetailsJpaEntity plano;
 
   @Column(nullable = false)
-  private String currency;
+  private String moeda;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private Instant createdAt;
+  @Column(name = "criado_em", nullable = false, updatable = false)
+  private Instant criadoEm;
 
-  @Column(name = "updated_at")
-  private Instant updatedAt;
+  @Column(name = "atualizado_em")
+  private Instant atualizadoEm;
 
-  @Column(name = "deleted_at")
-  private Instant deletedAt;
+  @Column(name = "excluido_em")
+  private Instant excluidoEm;
 
-  @Column(name = "created_by")
-  private UUID createdBy;
+  @Column(name = "criado_por")
+  private UUID criadoPor;
 
-  @Column(name = "updated_by")
-  private UUID updatedBy;
+  @Column(name = "atualizado_por")
+  private UUID atualizadoPor;
 
   @PrePersist
   void prePersist() {
-    this.createdAt = Instant.now();
-    if (this.currency == null) {
-      this.currency = "BRL";
+    this.criadoEm = Instant.now();
+    if (this.moeda == null) {
+      this.moeda = "BRL";
     }
   }
 
   @PreUpdate
   void preUpdate() {
-    this.updatedAt = Instant.now();
+    this.atualizadoEm = Instant.now();
   }
 }

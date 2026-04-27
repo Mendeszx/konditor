@@ -42,4 +42,19 @@ public interface ProductJpaRepository extends JpaRepository<ProductJpaEntity, UU
       """)
   List<ProductJpaEntity> findAllActiveByWorkspaceIdWithDetails(
       @Param("workspaceId") UUID workspaceId, @Param("status") RecipeStatus status);
+
+  /**
+   * Conta o número de receitas ativas de um workspace por status, sem carregar os dados. Usado para
+   * compor as estatísticas do dashboard sem custo de query adicional.
+   */
+  @Query(
+      """
+      SELECT COUNT(p) FROM ProductJpaEntity p
+      WHERE p.workspace.id = :workspaceId
+        AND p.deletedAt IS NULL
+        AND p.isActive = true
+        AND p.status = :status
+      """)
+  long countActiveByWorkspaceIdAndStatus(
+      @Param("workspaceId") UUID workspaceId, @Param("status") RecipeStatus status);
 }

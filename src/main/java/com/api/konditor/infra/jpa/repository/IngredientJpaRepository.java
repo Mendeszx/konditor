@@ -26,18 +26,6 @@ public interface IngredientJpaRepository extends JpaRepository<IngredientJpaEnti
 
   long countByWorkspaceIdAndDeletedAtIsNull(UUID workspaceId);
 
-  /** Conta ingredientes com estoque abaixo do mínimo configurado. */
-  @Query(
-      """
-      SELECT COUNT(i) FROM IngredientJpaEntity i
-      WHERE i.workspace.id = :workspaceId
-        AND i.deletedAt IS NULL
-        AND i.stockQuantity IS NOT NULL
-        AND i.stockAlertMin IS NOT NULL
-        AND i.stockQuantity < i.stockAlertMin
-      """)
-  long countEstoqueCritico(@Param("workspaceId") UUID workspaceId);
-
   /**
    * Listagem paginada de todos os ingredientes do workspace, com unit e category carregados para
    * evitar N+1.

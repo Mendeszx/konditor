@@ -14,11 +14,11 @@ public interface RoleJpaMapper {
 
   default Role toDomain(RoleJpaEntity entity) {
     if (entity == null) return null;
-    return Role.valueOf(entity.getName());
+    return Role.valueOf(entity.getNome());
   }
 
   default RoleJpaEntity toJpa(Role role) {
     if (role == null) return null;
-    return RoleJpaEntity.builder().name(role.name()).build();
+    return RoleJpaEntity.builder().nome(role.name()).build();
   }
 }

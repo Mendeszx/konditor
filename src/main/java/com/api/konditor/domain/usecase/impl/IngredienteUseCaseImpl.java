@@ -1,8 +1,7 @@
-package com.api.konditor.domain.useCase.impl;
+package com.api.konditor.domain.usecase.impl;
 
 import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.request.CriarIngredienteRequest;
-import com.api.konditor.app.controller.response.AlertaMercadoItemResponse;
 import com.api.konditor.app.controller.response.CategoriaIngredienteResponse;
 import com.api.konditor.app.controller.response.IngredienteCardResponse;
 import com.api.konditor.app.controller.response.IngredienteResponse;
@@ -10,7 +9,7 @@ import com.api.konditor.app.controller.response.IngredienteResumoResponse;
 import com.api.konditor.app.controller.response.PaginaResponse;
 import com.api.konditor.app.exception.IngredienteException;
 import com.api.konditor.domain.enuns.AuditOperation;
-import com.api.konditor.domain.useCase.IngredienteUseCase;
+import com.api.konditor.domain.usecase.IngredienteUseCase;
 import com.api.konditor.infra.jpa.entity.AuditLogJpaEntity;
 import com.api.konditor.infra.jpa.entity.IngredientCategoryJpaEntity;
 import com.api.konditor.infra.jpa.entity.IngredientJpaEntity;
@@ -32,8 +31,6 @@ import com.api.konditor.infra.jpa.repository.UserJpaRepository;
 import com.api.konditor.infra.jpa.repository.WorkspaceJpaRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -109,19 +106,8 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
   public IngredienteResumoResponse resumo(UsuarioAutenticado usuario) {
     UUID workspaceId = resolverWorkspaceId(usuario);
     log.debug("[INGREDIENTE] Resumo — workspaceId={}", workspaceId);
-
     long total = ingredientRepository.countByWorkspaceIdAndDeletedAtIsNull(workspaceId);
-    long critico = ingredientRepository.countEstoqueCritico(workspaceId);
-
-    return new IngredienteResumoResponse(total, critico);
-  }
-
-  @Override
-  @Transactional(readOnly = true)
-  public List<AlertaMercadoItemResponse> alertasMercado(UsuarioAutenticado usuario) {
-    resolverWorkspaceId(usuario);
-    log.debug("[INGREDIENTE] Alertas de mercado — userId={} (dados mockados)", usuario.id());
-    return alertasMockados();
+    return new IngredienteResumoResponse(total);
   }
 
   @Override
@@ -166,8 +152,6 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
             .category(category)
             .unit(unit)
             .costPerUnit(request.getPrecoPorUnidade())
-            .stockQuantity(request.getEstoqueQuantidade())
-            .stockAlertMin(request.getEstoqueAlertaMinimo())
             .notes(request.getNotas())
             .createdBy(createdBy)
             .build();
@@ -219,8 +203,6 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
     entity.setCategory(category);
     entity.setUnit(unit);
     entity.setCostPerUnit(request.getPrecoPorUnidade());
-    entity.setStockQuantity(request.getEstoqueQuantidade());
-    entity.setStockAlertMin(request.getEstoqueAlertaMinimo());
     entity.setNotes(request.getNotas());
     entity.setUpdatedBy(updatedBy);
 
@@ -328,10 +310,6 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
 
   private IngredienteCardResponse toCard(
       IngredientJpaEntity i, IngredientPriceHistoryJpaEntity historico) {
-    boolean critico =
-        i.getStockQuantity() != null
-            && i.getStockAlertMin() != null
-            && i.getStockQuantity().compareTo(i.getStockAlertMin()) < 0;
 
     BigDecimal variacao = null;
     if (historico != null && historico.getOldPrice().compareTo(BigDecimal.ZERO) != 0) {
@@ -356,8 +334,6 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
         .unidade(i.getUnit() != null ? i.getUnit().getSymbol() : null)
         .preco(i.getCostPerUnit())
         .variacaoPreco(variacao)
-        .estoque(i.getStockQuantity())
-        .estoqueCritico(critico)
         .build();
   }
 
@@ -374,11 +350,6 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
     IngredientCategoryJpaEntity cat = i.getCategory();
     UnitJpaEntity unit = i.getUnit();
 
-    boolean critico =
-        i.getStockQuantity() != null
-            && i.getStockAlertMin() != null
-            && i.getStockQuantity().compareTo(i.getStockAlertMin()) < 0;
-
     return IngredienteResponse.builder()
         .id(i.getId().toString())
         .codigo(i.getCode())
@@ -391,9 +362,6 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
         .unidadeSimbolo(unit != null ? unit.getSymbol() : null)
         .unidadeNome(unit != null ? unit.getName() : null)
         .precoPorUnidade(i.getCostPerUnit())
-        .estoqueQuantidade(i.getStockQuantity())
-        .estoqueAlertaMinimo(i.getStockAlertMin())
-        .estoqueCritico(critico)
         .notas(i.getNotes())
         .criadoEm(i.getCreatedAt())
         .atualizadoEm(i.getUpdatedAt())
@@ -496,60 +464,6 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
             .operation(operation)
             .dataAfter(dataAfter)
             .performedBy(performedBy)
-            .build());
-  }
-
-  // =========================================================================
-  // Dados mockados — painel de Alerta de Mercado
-  // =========================================================================
-
-  private List<AlertaMercadoItemResponse> alertasMockados() {
-    Instant agora = Instant.now();
-    return List.of(
-        AlertaMercadoItemResponse.builder()
-            .ingredienteId("mock-001")
-            .ingredienteNome("Cacau em Pó 100%")
-            .variacaoPercent(new BigDecimal("8.50"))
-            .precoAnterior(new BigDecimal("45.00"))
-            .precoAtual(new BigDecimal("48.83"))
-            .tipo("alta")
-            .dataAlteracao(agora.minus(3, ChronoUnit.DAYS))
-            .build(),
-        AlertaMercadoItemResponse.builder()
-            .ingredienteId("mock-002")
-            .ingredienteNome("Manteiga sem Sal")
-            .variacaoPercent(new BigDecimal("12.30"))
-            .precoAnterior(new BigDecimal("32.50"))
-            .precoAtual(new BigDecimal("36.50"))
-            .tipo("alta")
-            .dataAlteracao(agora.minus(5, ChronoUnit.DAYS))
-            .build(),
-        AlertaMercadoItemResponse.builder()
-            .ingredienteId("mock-003")
-            .ingredienteNome("Valrhona Manjari 64%")
-            .variacaoPercent(new BigDecimal("-2.00"))
-            .precoAnterior(new BigDecimal("91.73"))
-            .precoAtual(new BigDecimal("89.90"))
-            .tipo("baixa")
-            .dataAlteracao(agora.minus(7, ChronoUnit.DAYS))
-            .build(),
-        AlertaMercadoItemResponse.builder()
-            .ingredienteId("mock-004")
-            .ingredienteNome("Açúcar Refinado")
-            .variacaoPercent(new BigDecimal("5.10"))
-            .precoAnterior(new BigDecimal("4.90"))
-            .precoAtual(new BigDecimal("5.15"))
-            .tipo("alta")
-            .dataAlteracao(agora.minus(10, ChronoUnit.DAYS))
-            .build(),
-        AlertaMercadoItemResponse.builder()
-            .ingredienteId("mock-005")
-            .ingredienteNome("Creme de Leite UHT")
-            .variacaoPercent(new BigDecimal("-4.50"))
-            .precoAnterior(new BigDecimal("8.80"))
-            .precoAtual(new BigDecimal("8.40"))
-            .tipo("baixa")
-            .dataAlteracao(agora.minus(14, ChronoUnit.DAYS))
             .build());
   }
 }

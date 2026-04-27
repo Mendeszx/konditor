@@ -3,7 +3,7 @@ package com.api.konditor.app.service;
 import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.request.OnboardingRequest;
 import com.api.konditor.app.controller.response.OnboardingResponse;
-import com.api.konditor.domain.useCase.OnboardingUseCase;
+import com.api.konditor.domain.usecase.OnboardingUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

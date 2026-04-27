@@ -6,8 +6,9 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
+/** Entidade JPA que mapeia a tabela {@code historico_preco_ingrediente}. */
 @Entity
-@Table(name = "ingredient_price_history", schema = "konditor")
+@Table(name = "historico_preco_ingrediente", schema = "konditor")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,20 +22,20 @@ public class IngredientPriceHistoryJpaEntity {
   private UUID id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "ingredient_id", nullable = false)
+  @JoinColumn(name = "ingrediente_id", nullable = false)
   private IngredientJpaEntity ingredient;
 
-  @Column(name = "old_price", nullable = false, precision = 19, scale = 4)
+  @Column(name = "preco_antigo", nullable = false, precision = 19, scale = 4)
   private BigDecimal oldPrice;
 
-  @Column(name = "new_price", nullable = false, precision = 19, scale = 4)
+  @Column(name = "preco_novo", nullable = false, precision = 19, scale = 4)
   private BigDecimal newPrice;
 
-  @Column(name = "changed_at", nullable = false, updatable = false)
+  @Column(name = "alterado_em", nullable = false, updatable = false)
   private Instant changedAt;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "changed_by")
+  @JoinColumn(name = "alterado_por")
   private UserJpaEntity changedBy;
 
   @PrePersist

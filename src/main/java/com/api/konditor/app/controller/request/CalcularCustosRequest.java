@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -90,4 +91,24 @@ public class CalcularCustosRequest {
   @DecimalMin(value = "0.0", message = "Margem deve ser >= 0")
   @DecimalMax(value = "99.0", message = "Margem deve ser < 100 (evita divisão por zero)")
   private BigDecimal margemDesejada;
+
+  /**
+   * ID da unidade de rendimento (ex: UUID de "g", "ml", "un"). Quando informado, permite ao sistema
+   * calcular custo/preço por grama/ml (para peso e volume) além do custo/preço por unidade/porção.
+   */
+  private UUID rendimentoUnidadeId;
+
+  /**
+   * Peso ou volume de cada unidade/porção (opcional). Exemplo: 15 (g por brigadeiro), 50 (ml por
+   * porção de mousse). Quando informado junto com {@code pesoPorUnidadeUnidadeId}, o sistema
+   * calcula automaticamente o número de unidades/porções e os custos por unidade/porção.
+   */
+  @Positive(message = "Peso/volume por unidade deve ser maior que zero")
+  private BigDecimal pesoPorUnidade;
+
+  /**
+   * Unidade do {@code pesoPorUnidade} (ex: UUID da unidade "g", "ml"). Deve ser compatível com o
+   * tipo da unidade de rendimento.
+   */
+  private UUID pesoPorUnidadeUnidadeId;
 }

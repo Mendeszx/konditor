@@ -6,17 +6,12 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
-/**
- * Entidade JPA que mapeia a tabela {@code product_ingredients} (receita).
- *
- * <p>Cada linha representa um ingrediente e sua quantidade usada na receita do produto. O custo é
- * derivado de {@code ingredient.costPerUnit * quantity} — não armazenado aqui.
- */
+/** Entidade JPA que mapeia a tabela {@code ingredientes_produto}. */
 @Entity
 @Table(
-    name = "product_ingredients",
+    name = "ingredientes_produto",
     schema = "konditor",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"product_id", "ingredient_id"}))
+    uniqueConstraints = @UniqueConstraint(columnNames = {"produto_id", "ingrediente_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,40 +25,40 @@ public class ProductIngredientJpaEntity {
   private UUID id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "product_id", nullable = false)
+  @JoinColumn(name = "produto_id", nullable = false)
   private ProductJpaEntity product;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "ingredient_id", nullable = false)
+  @JoinColumn(name = "ingrediente_id", nullable = false)
   private IngredientJpaEntity ingredient;
 
   /** Quantidade do ingrediente usada nesta receita. */
-  @Column(nullable = false, precision = 19, scale = 4)
+  @Column(name = "quantidade", nullable = false, precision = 19, scale = 4)
   private BigDecimal quantity;
 
   /** Unidade da quantidade acima (pode diferir da unidade base do ingrediente). */
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "unit_id", nullable = false)
+  @JoinColumn(name = "unidade_id", nullable = false)
   private UnitJpaEntity unit;
 
-  @Column(columnDefinition = "text")
+  @Column(name = "notas", columnDefinition = "text")
   private String notes;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
+  @Column(name = "criado_em", nullable = false, updatable = false)
   private Instant createdAt;
 
-  @Column(name = "updated_at")
+  @Column(name = "atualizado_em")
   private Instant updatedAt;
 
-  @Column(name = "deleted_at")
+  @Column(name = "excluido_em")
   private Instant deletedAt;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "created_by")
+  @JoinColumn(name = "criado_por")
   private UserJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "updated_by")
+  @JoinColumn(name = "atualizado_por")
   private UserJpaEntity updatedBy;
 
   @PrePersist

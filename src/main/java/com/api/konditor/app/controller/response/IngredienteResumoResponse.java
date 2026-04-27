@@ -18,7 +18,4 @@ public class IngredienteResumoResponse {
 
   /** Total de ingredientes cadastrados e ativos no workspace. */
   private long totalIngredientes;
-
-  /** Quantidade de ingredientes com estoque abaixo do mínimo configurado. */
-  private long estoqueCritico;
 }

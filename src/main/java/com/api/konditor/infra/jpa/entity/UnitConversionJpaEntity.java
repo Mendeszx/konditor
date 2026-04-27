@@ -6,12 +6,13 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
-/** Entidade JPA que mapeia a tabela {@code unit_conversions}. */
+/** Entidade JPA que mapeia a tabela {@code conversoes_unidade}. */
 @Entity
 @Table(
-    name = "unit_conversions",
+    name = "conversoes_unidade",
     schema = "konditor",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"from_unit_id", "to_unit_id"}))
+    uniqueConstraints =
+        @UniqueConstraint(columnNames = {"unidade_origem_id", "unidade_destino_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -25,31 +26,31 @@ public class UnitConversionJpaEntity {
   private UUID id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "from_unit_id", nullable = false)
+  @JoinColumn(name = "unidade_origem_id", nullable = false)
   private UnitJpaEntity fromUnit;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "to_unit_id", nullable = false)
+  @JoinColumn(name = "unidade_destino_id", nullable = false)
   private UnitJpaEntity toUnit;
 
-  @Column(nullable = false, precision = 19, scale = 6)
+  @Column(name = "fator", nullable = false, precision = 19, scale = 6)
   private BigDecimal factor;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
+  @Column(name = "criado_em", nullable = false, updatable = false)
   private Instant createdAt;
 
-  @Column(name = "updated_at")
+  @Column(name = "atualizado_em")
   private Instant updatedAt;
 
-  @Column(name = "deleted_at")
+  @Column(name = "excluido_em")
   private Instant deletedAt;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "created_by")
+  @JoinColumn(name = "criado_por")
   private UserJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "updated_by")
+  @JoinColumn(name = "atualizado_por")
   private UserJpaEntity updatedBy;
 
   @PrePersist

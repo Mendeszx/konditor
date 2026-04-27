@@ -1,4 +1,4 @@
-package com.api.konditor.domain.useCase.impl;
+package com.api.konditor.domain.usecase.impl;
 
 import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.request.CalcularCustosRequest;
@@ -12,7 +12,8 @@ import com.api.konditor.app.controller.response.ReceitaResponse;
 import com.api.konditor.app.exception.ReceitaException;
 import com.api.konditor.domain.enuns.AuditOperation;
 import com.api.konditor.domain.enuns.RecipeStatus;
-import com.api.konditor.domain.useCase.ReceitaUseCase;
+import com.api.konditor.domain.enuns.UnitType;
+import com.api.konditor.domain.usecase.ReceitaUseCase;
 import com.api.konditor.infra.jpa.entity.AuditLogJpaEntity;
 import com.api.konditor.infra.jpa.entity.IngredientJpaEntity;
 import com.api.konditor.infra.jpa.entity.ProductCategoryJpaEntity;
@@ -67,6 +68,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReceitaUseCaseImpl implements ReceitaUseCase {
 
   private static final BigDecimal MARGEM_PADRAO = new BigDecimal("30.00");
+  private static final String CUSTOS_FIXOS_TIPO_PADRAO = "percentual";
 
   private final ProductJpaRepository productRepository;
   private final ProductIngredientJpaRepository productIngredientRepository;
@@ -100,6 +102,11 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
 
     RecipeStatus status = resolverStatus(request.getStatus());
 
+    UnitJpaEntity pesoPorUnidadeUnit =
+        request.getPesoPorUnidadeUnidadeId() != null
+            ? buscarUnidade(request.getPesoPorUnidadeUnidadeId())
+            : null;
+
     ProductJpaEntity product =
         ProductJpaEntity.builder()
             .workspace(workspace)
@@ -112,13 +119,23 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
             .notes(request.getNotas())
             .sellingPrice(request.getPrecoFinal())
             .status(status)
+            .unitWeight(request.getPesoPorUnidade())
+            .unitWeightUnit(pesoPorUnidadeUnit)
+            .laborCostPerHour(coalesce(request.getMaoDeObraValorHora(), BigDecimal.ZERO))
+            .fixedCostsValue(coalesce(request.getCustosFixosValor(), BigDecimal.ZERO))
+            .fixedCostsType(coalesce(request.getCustosFixosTipo(), CUSTOS_FIXOS_TIPO_PADRAO))
+            .desiredMargin(coalesce(request.getMargemDesejada(), MARGEM_PADRAO))
             .build();
+
+    // Aplica todos os custos ANTES do save para que tudo seja persistido em um único INSERT,
+    // evitando que Hibernate faça INSERT + UPDATE (o que dispararia @PreUpdate e setaria
+    // updatedAt na criação, além de criar uma janela de race condition).
+    aplicarCustos(product, request);
+
     product = productRepository.save(product);
 
     List<IngredienteReceitaResponse> ingredientes =
         salvarIngredientes(product, request.getIngredientes(), workspaceId);
-
-    recalcularCustos(product, ingredientes);
     log.info(
         "[RECEITA] Receita criada id={} status={} custo={}",
         product.getId(),
@@ -165,6 +182,15 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
     if (request.getStatus() != null) {
       product.setStatus(resolverStatus(request.getStatus()));
     }
+    product.setUnitWeight(request.getPesoPorUnidade());
+    product.setUnitWeightUnit(
+        request.getPesoPorUnidadeUnidadeId() != null
+            ? buscarUnidade(request.getPesoPorUnidadeUnidadeId())
+            : null);
+    product.setLaborCostPerHour(coalesce(request.getMaoDeObraValorHora(), BigDecimal.ZERO));
+    product.setFixedCostsValue(coalesce(request.getCustosFixosValor(), BigDecimal.ZERO));
+    product.setFixedCostsType(coalesce(request.getCustosFixosTipo(), CUSTOS_FIXOS_TIPO_PADRAO));
+    product.setDesiredMargin(coalesce(request.getMargemDesejada(), MARGEM_PADRAO));
 
     // Substitui ingredientes completamente (delete + re-insert)
     productIngredientRepository.deleteAllByProductId(id);
@@ -172,10 +198,13 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
     List<IngredienteReceitaResponse> ingredientes =
         salvarIngredientes(product, request.getIngredientes(), workspaceId);
 
-    recalcularCustos(product, ingredientes);
-    log.info("[RECEITA] Receita id={} atualizada", id);
+    aplicarCustos(product, request);
+    product = productRepository.save(product);
+    log.info("[RECEITA] Receita id={} atualizada unitCost={}", id, product.getUnitCost());
 
     UserJpaEntity user = buscarUsuario(UUID.fromString(usuario.id()));
+    product.setUpdatedBy(user);
+    productRepository.save(product);
     registrarAuditLog(
         product.getWorkspace(),
         "Receita",
@@ -259,7 +288,7 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
 
     // 3. Custos fixos — percentual sobre ingredientes ou valor direto
     BigDecimal custosFixos;
-    if ("percentual".equalsIgnoreCase(request.getCustosFixosTipo())) {
+    if (CUSTOS_FIXOS_TIPO_PADRAO.equalsIgnoreCase(request.getCustosFixosTipo())) {
       custosFixos = percentual(custoIngredientes, request.getCustosFixosValor());
     } else {
       custosFixos = request.getCustosFixosValor();
@@ -274,6 +303,16 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
     BigDecimal rendimento = request.getRendimentoQuantidade();
     BigDecimal custoTotalPorUnidade = custoTotal.divide(rendimento, 4, RoundingMode.HALF_UP);
     BigDecimal precoSugeridoPorUnidade = precoSugerido.divide(rendimento, 4, RoundingMode.HALF_UP);
+
+    // 6. Cálculos aprimorados de rendimento por tipo de unidade
+    ResultadoRendimentoAprimorado aprimorado =
+        calcularRendimentoAprimorado(
+            rendimento,
+            custoTotal,
+            precoSugerido,
+            request.getRendimentoUnidadeId(),
+            request.getPesoPorUnidade(),
+            request.getPesoPorUnidadeUnidadeId());
 
     return CustosCalculadosResponse.builder()
         .custoIngredientes(custoIngredientes.setScale(2, RoundingMode.HALF_UP))
@@ -290,6 +329,26 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
         .custosFixosValor(request.getCustosFixosValor())
         .custosFixosTipo(request.getCustosFixosTipo())
         .margemUtilizada(margemDesejada)
+        .numeroPorcoesUnidades(
+            aprimorado.numeroPorcoesUnidades() != null
+                ? aprimorado.numeroPorcoesUnidades().setScale(2, RoundingMode.HALF_UP)
+                : null)
+        .custoPorGramaOuMl(
+            aprimorado.custoPorGramaOuMl() != null
+                ? aprimorado.custoPorGramaOuMl().setScale(6, RoundingMode.HALF_UP)
+                : null)
+        .precoPorGramaOuMl(
+            aprimorado.precoPorGramaOuMl() != null
+                ? aprimorado.precoPorGramaOuMl().setScale(6, RoundingMode.HALF_UP)
+                : null)
+        .custoPorPorcaoOuUnidade(
+            aprimorado.custoPorPorcaoOuUnidade() != null
+                ? aprimorado.custoPorPorcaoOuUnidade().setScale(2, RoundingMode.HALF_UP)
+                : null)
+        .precoPorPorcaoOuUnidade(
+            aprimorado.precoPorPorcaoOuUnidade() != null
+                ? aprimorado.precoPorPorcaoOuUnidade().setScale(2, RoundingMode.HALF_UP)
+                : null)
         .build();
   }
 
@@ -430,20 +489,53 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
   }
 
   /**
-   * Recalcula {@code calculatedCost} e {@code suggestedPrice} da entidade produto com base na lista
-   * de ingredientes já montada, e persiste via dirty-checking.
+   * Persiste os custos pré-calculados (vindos do frontend via {@code POST /receitas/calcular})
+   * diretamente na entidade, sem recalcular. O servidor é a fonte de verdade dos metadados da
+   * receita; os valores financeiros são confiados ao resultado do endpoint de cálculo.
    */
-  private void recalcularCustos(
-      ProductJpaEntity product, List<IngredienteReceitaResponse> ingredientes) {
-    BigDecimal custoTotal =
-        ingredientes.stream()
-            .map(IngredienteReceitaResponse::getCustoCalculado)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+  private void aplicarCustos(ProductJpaEntity product, CriarReceitaRequest request) {
+    BigDecimal zero = BigDecimal.ZERO;
+    // Custos do lote
+    product.setIngredientCost(coalesce(request.getCustoIngredientes(), zero));
+    product.setLaborCost(coalesce(request.getCustoMaoDeObra(), zero));
+    product.setFixedCosts(coalesce(request.getCustosFixos(), zero));
+    product.setCalculatedCost(coalesce(request.getCustoCalculado(), zero));
+    product.setSuggestedPrice(coalesce(request.getPrecoSugerido(), zero));
+    // Parâmetros de referência
+    product.setLaborCostPerHour(coalesce(request.getMaoDeObraValorHora(), zero));
+    product.setFixedCostsValue(coalesce(request.getCustosFixosValor(), zero));
+    product.setFixedCostsType(coalesce(request.getCustosFixosTipo(), CUSTOS_FIXOS_TIPO_PADRAO));
+    product.setDesiredMargin(coalesce(request.getMargemDesejada(), MARGEM_PADRAO));
+    // Valores calculados aprimorados (por unidade, por porção, por g/ml)
+    // Prefer client-provided values; fall back to server-side computation when absent.
+    BigDecimal calculatedCost = coalesce(request.getCustoCalculado(), zero);
+    BigDecimal yieldQty =
+        (product.getYieldQuantity() != null
+                && product.getYieldQuantity().compareTo(BigDecimal.ZERO) > 0)
+            ? product.getYieldQuantity()
+            : null;
 
-    BigDecimal precoSugerido = calcularPrecoSugerido(custoTotal, MARGEM_PADRAO);
+    BigDecimal unitCost =
+        request.getCustoTotalPorUnidade() != null
+            ? request.getCustoTotalPorUnidade()
+            : (yieldQty != null
+                ? calculatedCost.divide(yieldQty, 4, java.math.RoundingMode.HALF_UP)
+                : null);
 
-    product.setCalculatedCost(custoTotal.setScale(4, RoundingMode.HALF_UP));
-    product.setSuggestedPrice(precoSugerido.setScale(2, RoundingMode.HALF_UP));
+    BigDecimal suggestedUnitPrice =
+        request.getPrecoSugeridoPorUnidade() != null
+            ? request.getPrecoSugeridoPorUnidade()
+            : (yieldQty != null && product.getSuggestedPrice() != null
+                ? product.getSuggestedPrice().divide(yieldQty, 4, java.math.RoundingMode.HALF_UP)
+                : null);
+
+    product.setUnitCost(unitCost);
+    product.setSuggestedUnitPrice(suggestedUnitPrice);
+    product.setPortionCount(request.getNumeroPorcoesUnidades());
+    product.setCostPerGramMl(request.getCustoPorGramaOuMl());
+    product.setPricePerGramMl(request.getPrecoPorGramaOuMl());
+    product.setCostPerPortion(request.getCustoPorPorcaoOuUnidade());
+    product.setPricePerPortion(request.getPrecoPorPorcaoOuUnidade());
   }
 
   // =========================================================================
@@ -506,8 +598,59 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
       ProductJpaEntity product, List<IngredienteReceitaResponse> ingredientes) {
     ProductCategoryJpaEntity cat = product.getCategory();
     UnitJpaEntity yUnit = product.getYieldUnit();
+    UnitJpaEntity pesUnit = product.getUnitWeightUnit();
 
-    BigDecimal margem = calcularMargemReal(product.getCalculatedCost(), product.getSellingPrice());
+    // Custo de ingredientes = calculatedCost - laborCost - fixedCosts
+    BigDecimal custoMaoDeObra = coalesce(product.getLaborCost(), BigDecimal.ZERO);
+    BigDecimal custoFixos = coalesce(product.getFixedCosts(), BigDecimal.ZERO);
+    BigDecimal custoTotal = coalesce(product.getCalculatedCost(), BigDecimal.ZERO);
+    // Custo de ingredientes: lê do DB (campo direto), fallback: calculatedCost - labor - fixed
+    BigDecimal custoIngredientesStored = product.getIngredientCost();
+    BigDecimal custoIngredientes =
+        custoIngredientesStored != null
+            ? custoIngredientesStored
+            : custoTotal.subtract(custoMaoDeObra).subtract(custoFixos);
+
+    // Margem real: ((precoFinal - custoTotalPorUnidade) / precoFinal) × 100
+    BigDecimal yieldQty =
+        (product.getYieldQuantity() != null
+                && product.getYieldQuantity().compareTo(BigDecimal.ZERO) > 0)
+            ? product.getYieldQuantity()
+            : BigDecimal.ONE;
+    BigDecimal custoTotalPorUnidade = custoTotal.divide(yieldQty, 4, RoundingMode.HALF_UP);
+    BigDecimal margem = calcularMargemReal(custoTotalPorUnidade, product.getSellingPrice());
+
+    ResultadoRendimentoAprimorado aprimorado =
+        calcularRendimentoAprimorado(
+            product.getYieldQuantity(),
+            custoTotal,
+            product.getSuggestedPrice() != null ? product.getSuggestedPrice() : BigDecimal.ZERO,
+            yUnit != null ? yUnit.getId() : null,
+            product.getUnitWeight(),
+            pesUnit != null ? pesUnit.getId() : null);
+
+    // Para os campos aprimorados: prefere o valor persistido no DB (enviado pelo frontend
+    // via /calcular), com fallback para o recálculo em tempo real.
+    BigDecimal numeroPorcoesUnidades =
+        product.getPortionCount() != null
+            ? product.getPortionCount()
+            : aprimorado.numeroPorcoesUnidades();
+    BigDecimal custoPorGramaOuMl =
+        product.getCostPerGramMl() != null
+            ? product.getCostPerGramMl()
+            : aprimorado.custoPorGramaOuMl();
+    BigDecimal precoPorGramaOuMl =
+        product.getPricePerGramMl() != null
+            ? product.getPricePerGramMl()
+            : aprimorado.precoPorGramaOuMl();
+    BigDecimal custoPorPorcaoOuUnidade =
+        product.getCostPerPortion() != null
+            ? product.getCostPerPortion()
+            : aprimorado.custoPorPorcaoOuUnidade();
+    BigDecimal precoPorPorcaoOuUnidade =
+        product.getPricePerPortion() != null
+            ? product.getPricePerPortion()
+            : aprimorado.precoPorPorcaoOuUnidade();
 
     return ReceitaResponse.builder()
         .id(product.getId().toString())
@@ -524,13 +667,138 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
         .notas(product.getNotes())
         .precoFinal(product.getSellingPrice())
         .precoSugerido(product.getSuggestedPrice())
-        .custoCalculado(product.getCalculatedCost())
+        .custoIngredientes(custoIngredientes.setScale(2, RoundingMode.HALF_UP))
+        .custoMaoDeObra(custoMaoDeObra.setScale(2, RoundingMode.HALF_UP))
+        .custosFixos(custoFixos.setScale(2, RoundingMode.HALF_UP))
+        .custoCalculado(custoTotal.setScale(2, RoundingMode.HALF_UP))
         .margem(margem.setScale(1, RoundingMode.HALF_UP))
+        .maoDeObraValorHora(coalesce(product.getLaborCostPerHour(), BigDecimal.ZERO))
+        .custosFixosValor(coalesce(product.getFixedCostsValue(), BigDecimal.ZERO))
+        .custosFixosTipo(coalesce(product.getFixedCostsType(), CUSTOS_FIXOS_TIPO_PADRAO))
+        .margemDesejada(coalesce(product.getDesiredMargin(), MARGEM_PADRAO))
         .status(product.getStatus())
         .ativo(product.isActive())
         .criadoEm(product.getCreatedAt())
         .atualizadoEm(product.getUpdatedAt())
+        .pesoPorUnidade(product.getUnitWeight())
+        .pesoPorUnidadeUnidadeId(pesUnit != null ? pesUnit.getId().toString() : null)
+        .pesoPorUnidadeUnidadeSimbolo(pesUnit != null ? pesUnit.getSymbol() : null)
+        .numeroPorcoesUnidades(
+            numeroPorcoesUnidades != null
+                ? numeroPorcoesUnidades.setScale(2, RoundingMode.HALF_UP)
+                : null)
+        .custoPorGramaOuMl(
+            custoPorGramaOuMl != null ? custoPorGramaOuMl.setScale(6, RoundingMode.HALF_UP) : null)
+        .precoPorGramaOuMl(
+            precoPorGramaOuMl != null ? precoPorGramaOuMl.setScale(6, RoundingMode.HALF_UP) : null)
+        .custoPorPorcaoOuUnidade(
+            custoPorPorcaoOuUnidade != null
+                ? custoPorPorcaoOuUnidade.setScale(2, RoundingMode.HALF_UP)
+                : null)
+        .precoPorPorcaoOuUnidade(
+            precoPorPorcaoOuUnidade != null
+                ? precoPorPorcaoOuUnidade.setScale(2, RoundingMode.HALF_UP)
+                : null)
         .build();
+  }
+
+  /**
+   * Resultado dos cálculos aprimorados de rendimento. Todos os campos são {@code null} quando não
+   * aplicável (ex: unidade do tipo {@code unit} sem pesoPorUnidade).
+   */
+  private record ResultadoRendimentoAprimorado(
+      BigDecimal numeroPorcoesUnidades,
+      BigDecimal custoPorGramaOuMl,
+      BigDecimal precoPorGramaOuMl,
+      BigDecimal custoPorPorcaoOuUnidade,
+      BigDecimal precoPorPorcaoOuUnidade) {}
+
+  /**
+   * Centraliza o cálculo de métricas por grama/ml e por unidade/porção.
+   *
+   * <ul>
+   *   <li>Se a unidade de rendimento for {@code weight} ou {@code volume}: calcula {@code
+   *       custoPorGramaOuMl} e {@code precoPorGramaOuMl} convertendo o rendimento para a unidade
+   *       base do tipo.
+   *   <li>Se {@code pesoPorUnidade} e {@code pesoPorUnidadeUnidadeId} forem fornecidos: calcula
+   *       {@code numeroPorcoesUnidades}, {@code custoPorPorcaoOuUnidade} e {@code
+   *       precoPorPorcaoOuUnidade}.
+   * </ul>
+   */
+  private ResultadoRendimentoAprimorado calcularRendimentoAprimorado(
+      BigDecimal rendimentoQuantidade,
+      BigDecimal custoTotal,
+      BigDecimal precoSugerido,
+      UUID rendimentoUnidadeId,
+      BigDecimal pesoPorUnidade,
+      UUID pesoPorUnidadeUnidadeId) {
+
+    if (rendimentoUnidadeId == null
+        || rendimentoQuantidade == null
+        || rendimentoQuantidade.compareTo(BigDecimal.ZERO) <= 0) {
+      return new ResultadoRendimentoAprimorado(null, null, null, null, null);
+    }
+
+    UnitJpaEntity rendUnit =
+        unitRepository.findByIdAndDeletedAtIsNull(rendimentoUnidadeId).orElse(null);
+    if (rendUnit == null) {
+      return new ResultadoRendimentoAprimorado(null, null, null, null, null);
+    }
+
+    if (rendUnit.getType() != UnitType.weight && rendUnit.getType() != UnitType.volume) {
+      return new ResultadoRendimentoAprimorado(null, null, null, null, null);
+    }
+
+    // Custo/preço por grama ou ml
+    BigDecimal custoPorGramaOuMl = null;
+    BigDecimal precoPorGramaOuMl = null;
+
+    UnitJpaEntity baseUnit =
+        unitRepository
+            .findFirstByTypeAndIsBaseTrueAndDeletedAtIsNull(rendUnit.getType())
+            .orElse(null);
+    if (baseUnit != null) {
+      BigDecimal fatorParaBase = resolverFatorConversao(rendUnit, baseUnit);
+      BigDecimal rendimentoEmBase = rendimentoQuantidade.multiply(fatorParaBase);
+      if (rendimentoEmBase.compareTo(BigDecimal.ZERO) > 0) {
+        custoPorGramaOuMl = custoTotal.divide(rendimentoEmBase, 6, RoundingMode.HALF_UP);
+        precoPorGramaOuMl = precoSugerido.divide(rendimentoEmBase, 6, RoundingMode.HALF_UP);
+      }
+    }
+
+    // Número de unidades/porções e custo/preço por unidade/porção
+    BigDecimal numeroPorcoesUnidades = null;
+    BigDecimal custoPorPorcaoOuUnidade = null;
+    BigDecimal precoPorPorcaoOuUnidade = null;
+
+    if (pesoPorUnidade != null
+        && pesoPorUnidadeUnidadeId != null
+        && pesoPorUnidade.compareTo(BigDecimal.ZERO) > 0) {
+      UnitJpaEntity pesUnit =
+          unitRepository.findByIdAndDeletedAtIsNull(pesoPorUnidadeUnidadeId).orElse(null);
+      if (pesUnit != null) {
+        // Converter pesoPorUnidade para a unidade de rendimento
+        BigDecimal fatorPesParaRendUnit = resolverFatorConversao(pesUnit, rendUnit);
+        BigDecimal pesEmRendUnit = pesoPorUnidade.multiply(fatorPesParaRendUnit);
+        if (pesEmRendUnit.compareTo(BigDecimal.ZERO) > 0) {
+          numeroPorcoesUnidades =
+              rendimentoQuantidade.divide(pesEmRendUnit, 4, RoundingMode.HALF_UP);
+          if (numeroPorcoesUnidades.compareTo(BigDecimal.ZERO) > 0) {
+            custoPorPorcaoOuUnidade =
+                custoTotal.divide(numeroPorcoesUnidades, 4, RoundingMode.HALF_UP);
+            precoPorPorcaoOuUnidade =
+                precoSugerido.divide(numeroPorcoesUnidades, 4, RoundingMode.HALF_UP);
+          }
+        }
+      }
+    }
+
+    return new ResultadoRendimentoAprimorado(
+        numeroPorcoesUnidades,
+        custoPorGramaOuMl,
+        precoPorGramaOuMl,
+        custoPorPorcaoOuUnidade,
+        precoPorPorcaoOuUnidade);
   }
 
   // =========================================================================

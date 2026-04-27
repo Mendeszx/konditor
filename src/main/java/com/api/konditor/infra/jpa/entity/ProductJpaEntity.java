@@ -7,12 +7,12 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
-/** Entidade JPA que mapeia a tabela {@code products}. */
+/** Entidade JPA que mapeia a tabela {@code produtos}. */
 @Entity
 @Table(
-    name = "products",
+    name = "produtos",
     schema = "konditor",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"workspace_id", "name"}))
+    uniqueConstraints = @UniqueConstraint(columnNames = {"espaco_trabalho_id", "nome"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,81 +26,137 @@ public class ProductJpaEntity {
   private UUID id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "workspace_id", nullable = false)
+  @JoinColumn(name = "espaco_trabalho_id", nullable = false)
   private WorkspaceJpaEntity workspace;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "category_id")
+  @JoinColumn(name = "categoria_id")
   private ProductCategoryJpaEntity category;
 
-  @Column(nullable = false)
+  @Column(name = "nome", nullable = false)
   private String name;
 
-  @Column(columnDefinition = "text")
+  @Column(name = "descricao", columnDefinition = "text")
   private String description;
 
-  @Column(name = "selling_price", nullable = false, precision = 19, scale = 2)
+  // -------------------------------------------------------------------------
+  // Preço / rendimento
+  // -------------------------------------------------------------------------
+
+  @Column(name = "preco_venda", nullable = false, precision = 19, scale = 4)
   private BigDecimal sellingPrice;
 
-  /** Quantas unidades (ou kg, ml…) este produto rende pela receita. */
-  @Column(name = "yield_quantity", nullable = false, precision = 19, scale = 4)
+  @Column(name = "quantidade_rendimento", nullable = false, precision = 19, scale = 4)
   private BigDecimal yieldQuantity;
 
-  /** Unidade do rendimento (ex: 12 unidades, 1 kg). */
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "yield_unit_id")
+  @JoinColumn(name = "unidade_rendimento_id")
   private UnitJpaEntity yieldUnit;
 
-  /** Custo total calculado com base na receita (cache recalculado ao salvar ingredientes). */
-  @Column(name = "calculated_cost", precision = 19, scale = 4)
+  @Column(name = "custo_calculado", precision = 19, scale = 4)
   private BigDecimal calculatedCost;
 
-  /** Tempo estimado de preparo em minutos. */
-  @Column(name = "prep_time_minutes")
+  @Column(name = "tempo_preparo_minutos")
   private Integer prepTimeMinutes;
 
-  @Column(columnDefinition = "text")
-  private String notes;
-
-  @Column(name = "is_active", nullable = false)
-  private boolean isActive;
-
-  /**
-   * Status do ciclo de vida da receita. {@code rascunho} = em edição (não aparece no dashboard).
-   * {@code publicada} = finalizada e visível em todas as listagens.
-   */
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
+  @Column(name = "status", nullable = false)
   private RecipeStatus status;
 
-  /**
-   * Preço de venda sugerido calculado pelo servidor com base no custo total e na margem padrão do
-   * workspace. Serve de referência para o usuário.
-   */
-  @Column(name = "suggested_price", precision = 19, scale = 2)
+  @Column(name = "preco_sugerido", precision = 19, scale = 4)
   private BigDecimal suggestedPrice;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
+  @Column(name = "notas", columnDefinition = "text")
+  private String notes;
+
+  @Column(name = "ativo", nullable = false)
+  private boolean isActive;
+
+  // -------------------------------------------------------------------------
+  // V2 — peso/volume por porção
+  // -------------------------------------------------------------------------
+
+  @Column(name = "peso_por_unidade", precision = 19, scale = 4)
+  private BigDecimal unitWeight;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "unidade_peso_por_unidade_id")
+  private UnitJpaEntity unitWeightUnit;
+
+  // -------------------------------------------------------------------------
+  // V3 — mão de obra, custos fixos, margem
+  // -------------------------------------------------------------------------
+
+  @Column(name = "custo_mao_de_obra_por_hora", precision = 19, scale = 2)
+  private BigDecimal laborCostPerHour;
+
+  @Column(name = "custo_mao_de_obra", precision = 19, scale = 4)
+  private BigDecimal laborCost;
+
+  @Column(name = "valor_custos_fixos", precision = 19, scale = 2)
+  private BigDecimal fixedCostsValue;
+
+  @Column(name = "tipo_custos_fixos", length = 20)
+  private String fixedCostsType;
+
+  @Column(name = "custos_fixos", precision = 19, scale = 4)
+  private BigDecimal fixedCosts;
+
+  @Column(name = "margem_desejada", precision = 5, scale = 2)
+  private BigDecimal desiredMargin;
+
+  // -------------------------------------------------------------------------
+  // V4 — métricas calculadas
+  // -------------------------------------------------------------------------
+
+  @Column(name = "custo_ingredientes", precision = 19, scale = 4)
+  private BigDecimal ingredientCost;
+
+  @Column(name = "custo_unitario", precision = 19, scale = 4)
+  private BigDecimal unitCost;
+
+  @Column(name = "preco_sugerido_unitario", precision = 19, scale = 4)
+  private BigDecimal suggestedUnitPrice;
+
+  @Column(name = "quantidade_porcoes", precision = 19, scale = 4)
+  private BigDecimal portionCount;
+
+  @Column(name = "custo_por_grama_ml", precision = 19, scale = 6)
+  private BigDecimal costPerGramMl;
+
+  @Column(name = "preco_por_grama_ml", precision = 19, scale = 6)
+  private BigDecimal pricePerGramMl;
+
+  @Column(name = "custo_por_porcao", precision = 19, scale = 4)
+  private BigDecimal costPerPortion;
+
+  @Column(name = "preco_por_porcao", precision = 19, scale = 4)
+  private BigDecimal pricePerPortion;
+
+  // -------------------------------------------------------------------------
+  // Auditoria
+  // -------------------------------------------------------------------------
+
+  @Column(name = "criado_em", nullable = false, updatable = false)
   private Instant createdAt;
 
-  @Column(name = "updated_at")
+  @Column(name = "atualizado_em")
   private Instant updatedAt;
 
-  @Column(name = "deleted_at")
+  @Column(name = "excluido_em")
   private Instant deletedAt;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "created_by")
+  @JoinColumn(name = "criado_por")
   private UserJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "updated_by")
+  @JoinColumn(name = "atualizado_por")
   private UserJpaEntity updatedBy;
 
   @PrePersist
   void prePersist() {
     this.createdAt = Instant.now();
-    this.isActive = true;
     if (this.status == null) {
       this.status = RecipeStatus.publicada;
     }

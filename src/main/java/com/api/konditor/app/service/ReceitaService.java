@@ -7,7 +7,7 @@ import com.api.konditor.app.controller.response.BuscaIngredienteResponse;
 import com.api.konditor.app.controller.response.CategoriaReceitaResponse;
 import com.api.konditor.app.controller.response.CustosCalculadosResponse;
 import com.api.konditor.app.controller.response.ReceitaResponse;
-import com.api.konditor.domain.useCase.ReceitaUseCase;
+import com.api.konditor.domain.usecase.ReceitaUseCase;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;

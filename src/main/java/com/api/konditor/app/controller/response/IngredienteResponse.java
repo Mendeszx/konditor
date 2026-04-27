@@ -51,15 +51,6 @@ public class IngredienteResponse {
   /** Custo por unidade base. */
   private BigDecimal precoPorUnidade;
 
-  /** Quantidade atual em estoque. {@code null} se o estoque não é controlado. */
-  private BigDecimal estoqueQuantidade;
-
-  /** Quantidade mínima configurada para alerta de estoque crítico. */
-  private BigDecimal estoqueAlertaMinimo;
-
-  /** {@code true} quando {@code estoqueQuantidade < estoqueAlertaMinimo}. */
-  private boolean estoqueCritico;
-
   /** Notas / observações adicionais. */
   private String notas;
 

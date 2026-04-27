@@ -6,13 +6,13 @@ import java.util.UUID;
 import lombok.*;
 
 /**
- * Entidade JPA que mapeia a tabela {@code plan_details}.
+ * Entidade JPA que mapeia a tabela {@code detalhes_plano}.
  *
  * <p>Armazena os dados completos de cada plano disponível na plataforma: preço, limites de uso e
  * funcionalidades inclusas.
  */
 @Entity
-@Table(name = "plan_details", schema = "konditor")
+@Table(name = "detalhes_plano", schema = "konditor")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,14 +26,14 @@ public class PlanDetailsJpaEntity {
   private UUID id;
 
   /** Identificador técnico do plano (ex: free, basic, premium). */
-  @Column(nullable = false, unique = true)
+  @Column(name = "nome", nullable = false, unique = true)
   private String name;
 
   /** Nome exibido ao usuário (ex: Gratuito, Básico, Premium). */
-  @Column(name = "display_name", nullable = false)
+  @Column(name = "nome_exibido", nullable = false)
   private String displayName;
 
-  @Column(columnDefinition = "text")
+  @Column(name = "descricao", columnDefinition = "text")
   private String description;
 
   // -------------------------------------------------------------------------
@@ -41,64 +41,64 @@ public class PlanDetailsJpaEntity {
   // -------------------------------------------------------------------------
 
   /** Valor em centavos (0 = gratuito). */
-  @Column(name = "price_cents", nullable = false)
+  @Column(name = "preco_centavos", nullable = false)
   private Integer priceCents;
 
   /** Ciclo de cobrança: monthly, yearly, once. */
-  @Column(name = "billing_cycle", nullable = false)
+  @Column(name = "ciclo_cobranca", nullable = false)
   private String billingCycle;
 
   // -------------------------------------------------------------------------
   // Limites de uso
   // -------------------------------------------------------------------------
 
-  @Column(name = "max_workspaces", nullable = false)
+  @Column(name = "max_espacos_trabalho")
   private Integer maxWorkspaces;
 
-  @Column(name = "max_members", nullable = false)
+  @Column(name = "max_membros")
   private Integer maxMembers;
 
-  @Column(name = "max_products")
+  @Column(name = "max_produtos")
   private Integer maxProducts;
 
-  @Column(name = "max_ingredients")
+  @Column(name = "max_ingredientes")
   private Integer maxIngredients;
 
   /** Pedidos por mês; null = ilimitado. */
-  @Column(name = "max_orders_per_month")
+  @Column(name = "max_pedidos_por_mes")
   private Integer maxOrdersPerMonth;
 
   // -------------------------------------------------------------------------
   // Funcionalidades inclusas
   // -------------------------------------------------------------------------
 
-  @Column(name = "has_cost_calculation", nullable = false)
+  @Column(name = "tem_calculo_custos", nullable = false)
   private boolean hasCostCalculation;
 
-  @Column(name = "has_order_management", nullable = false)
+  @Column(name = "tem_gerenciamento_pedidos", nullable = false)
   private boolean hasOrderManagement;
 
-  @Column(name = "has_reports", nullable = false)
+  @Column(name = "tem_relatorios", nullable = false)
   private boolean hasReports;
 
-  @Column(name = "has_audit_log", nullable = false)
+  @Column(name = "tem_log_auditoria", nullable = false)
   private boolean hasAuditLog;
 
-  @Column(name = "has_api_access", nullable = false)
+  @Column(name = "tem_acesso_api", nullable = false)
   private boolean hasApiAccess;
 
-  @Column(name = "has_priority_support", nullable = false)
+  @Column(name = "tem_suporte_prioritario", nullable = false)
   private boolean hasPrioritySupport;
 
   // -------------------------------------------------------------------------
 
-  @Column(name = "is_active", nullable = false)
+  @Column(name = "ativo", nullable = false)
   private boolean isActive;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
+  @Column(name = "criado_em", nullable = false, updatable = false)
   private Instant createdAt;
 
-  @Column(name = "updated_at")
+  @Column(name = "atualizado_em")
   private Instant updatedAt;
 
   @PrePersist

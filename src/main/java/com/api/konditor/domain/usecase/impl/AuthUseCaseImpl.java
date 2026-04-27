@@ -1,4 +1,4 @@
-package com.api.konditor.domain.useCase.impl;
+package com.api.konditor.domain.usecase.impl;
 
 import com.api.konditor.app.controller.response.DadosUsuarioResponse;
 import com.api.konditor.app.controller.response.DadosWorkspaceResponse;
@@ -9,7 +9,7 @@ import com.api.konditor.app.service.JwtService;
 import com.api.konditor.domain.enuns.Plan;
 import com.api.konditor.domain.enuns.Role;
 import com.api.konditor.domain.enuns.SubscriptionStatus;
-import com.api.konditor.domain.useCase.AuthUseCase;
+import com.api.konditor.domain.usecase.AuthUseCase;
 import com.api.konditor.infra.googleprovider.GoogleIdentityProvider;
 import com.api.konditor.infra.googleprovider.response.GoogleUserResponse;
 import com.api.konditor.infra.jpa.entity.RefreshTokenJpaEntity;
@@ -89,13 +89,13 @@ public class AuthUseCaseImpl implements AuthUseCase {
           "Bearer",
           jwtService.getExpiracaoEmSegundos(),
           new DadosUsuarioResponse(
-              usuario.getId().toString(), usuario.getName(), usuario.getEmail()),
+              usuario.getId().toString(), usuario.getNome(), usuario.getEmail()),
           null);
     }
 
     WorkspaceContext ctx = resolverWorkspace(usuario);
 
-    Role role = Role.valueOf(ctx.member().getRole().getName());
+    Role role = Role.valueOf(ctx.member().getPapel().getNome());
 
     String accessToken =
         jwtService.gerarToken(
@@ -114,7 +114,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
         accessToken,
         "Bearer",
         jwtService.getExpiracaoEmSegundos(),
-        new DadosUsuarioResponse(usuario.getId().toString(), usuario.getName(), usuario.getEmail()),
+        new DadosUsuarioResponse(usuario.getId().toString(), usuario.getNome(), usuario.getEmail()),
         new DadosWorkspaceResponse(ctx.workspace().getId().toString(), role, ctx.plan()));
   }
 
@@ -138,7 +138,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
     RefreshTokenJpaEntity novoToken = criarRefreshToken(usuario);
     adicionarCookie(response, novoToken);
 
-    Role role = Role.valueOf(ctx.member().getRole().getName());
+    Role role = Role.valueOf(ctx.member().getPapel().getNome());
     String novoAccessToken =
         jwtService.gerarToken(
             new JwtService.ContextoToken(
@@ -273,7 +273,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
         .map(
             existente -> {
               existente.setEmail(dados.getEmail());
-              existente.setName(dados.getName());
+              existente.setNome(dados.getName());
               return existente;
             })
         .orElseGet(
@@ -281,9 +281,9 @@ public class AuthUseCaseImpl implements AuthUseCase {
               log.info("[AUTH] Novo usuário criado via Google email={}", dados.getEmail());
               return userRepository.save(
                   UserJpaEntity.builder()
-                      .googleId(dados.getGoogleId())
+                      .idGoogle(dados.getGoogleId())
                       .email(dados.getEmail())
-                      .name(dados.getName())
+                      .nome(dados.getName())
                       .build());
             });
   }

@@ -6,12 +6,12 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
-/** Entidade JPA que mapeia a tabela {@code ingredients}. */
+/** Entidade JPA que mapeia a tabela {@code ingredientes}. */
 @Entity
 @Table(
-    name = "ingredients",
+    name = "ingredientes",
     schema = "konditor",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"workspace_id", "name"}))
+    uniqueConstraints = @UniqueConstraint(columnNames = {"espaco_trabalho_id", "nome"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -25,58 +25,50 @@ public class IngredientJpaEntity {
   private UUID id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "workspace_id", nullable = false)
+  @JoinColumn(name = "espaco_trabalho_id", nullable = false)
   private WorkspaceJpaEntity workspace;
 
-  @Column(nullable = false)
+  @Column(name = "nome", nullable = false)
   private String name;
 
-  @Column private String code;
+  @Column(name = "codigo")
+  private String code;
 
-  @Column(columnDefinition = "text")
+  @Column(name = "descricao", columnDefinition = "text")
   private String description;
 
-  /** Marca / fornecedor do ingrediente. */
-  @Column private String brand;
+  @Column(name = "marca")
+  private String brand;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "category_id")
+  @JoinColumn(name = "categoria_id")
   private IngredientCategoryJpaEntity category;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "unit_id", nullable = false)
+  @JoinColumn(name = "unidade_id", nullable = false)
   private UnitJpaEntity unit;
 
-  /** Custo por unidade da {@code unit} — base para cálculo de custo das receitas. */
-  @Column(name = "cost_per_unit", nullable = false, precision = 19, scale = 4)
+  @Column(name = "custo_por_unidade", nullable = false, precision = 19, scale = 4)
   private BigDecimal costPerUnit;
 
-  /** Quantidade em estoque atual (null = não controla estoque). */
-  @Column(name = "stock_quantity", precision = 19, scale = 4)
-  private BigDecimal stockQuantity;
-
-  /** Quantidade mínima para disparo de alerta de estoque baixo. */
-  @Column(name = "stock_alert_min", precision = 19, scale = 4)
-  private BigDecimal stockAlertMin;
-
-  @Column(columnDefinition = "text")
+  @Column(name = "notas", columnDefinition = "text")
   private String notes;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
+  @Column(name = "criado_em", nullable = false, updatable = false)
   private Instant createdAt;
 
-  @Column(name = "updated_at")
+  @Column(name = "atualizado_em")
   private Instant updatedAt;
 
-  @Column(name = "deleted_at")
+  @Column(name = "excluido_em")
   private Instant deletedAt;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "created_by")
+  @JoinColumn(name = "criado_por")
   private UserJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "updated_by")
+  @JoinColumn(name = "atualizado_por")
   private UserJpaEntity updatedBy;
 
   @PrePersist

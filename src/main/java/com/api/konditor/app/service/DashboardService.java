@@ -4,7 +4,7 @@ import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.response.DashboardStatsResponse;
 import com.api.konditor.app.controller.response.ReceitaCardResponse;
 import com.api.konditor.domain.enuns.RecipeStatus;
-import com.api.konditor.domain.useCase.DashboardUseCase;
+import com.api.konditor.domain.usecase.DashboardUseCase;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

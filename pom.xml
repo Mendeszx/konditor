@@ -115,6 +115,14 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
+
+		<!-- PIT Mutation Testing — JUnit 5 plugin -->
+		<dependency>
+			<groupId>org.pitest</groupId>
+			<artifactId>pitest-junit5-plugin</artifactId>
+			<version>1.2.2</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -219,6 +227,32 @@
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.pitest</groupId>
+				<artifactId>pitest-maven</artifactId>
+				<version>1.16.1</version>
+				<configuration>
+					<targetClasses>
+						<param>com.api.konditor.domain.usecase.impl.ReceitaUseCaseImpl</param>
+					</targetClasses>
+					<targetTests>
+						<param>com.api.konditor.domain.usecase.impl.ReceitaUseCaseImplCalcularCustosTest</param>
+					</targetTests>
+					<mutators>
+						<mutator>DEFAULTS</mutator>
+						<mutator>EMPTY_RETURNS</mutator>
+						<mutator>NULL_RETURNS</mutator>
+						<mutator>TRUE_RETURNS</mutator>
+						<mutator>FALSE_RETURNS</mutator>
+					</mutators>
+					<outputFormats>
+						<outputFormat>HTML</outputFormat>
+						<outputFormat>XML</outputFormat>
+					</outputFormats>
+					<timestampedReports>false</timestampedReports>
+					<mutationThreshold>90</mutationThreshold>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

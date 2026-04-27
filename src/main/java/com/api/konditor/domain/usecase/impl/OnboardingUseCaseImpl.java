@@ -1,4 +1,4 @@
-package com.api.konditor.domain.useCase.impl;
+package com.api.konditor.domain.usecase.impl;
 
 import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.request.OnboardingRequest;
@@ -13,7 +13,7 @@ import com.api.konditor.domain.enuns.AuditOperation;
 import com.api.konditor.domain.enuns.Plan;
 import com.api.konditor.domain.enuns.Role;
 import com.api.konditor.domain.enuns.SubscriptionStatus;
-import com.api.konditor.domain.useCase.OnboardingUseCase;
+import com.api.konditor.domain.usecase.OnboardingUseCase;
 import com.api.konditor.infra.jpa.entity.AuditLogJpaEntity;
 import com.api.konditor.infra.jpa.entity.PlanDetailsJpaEntity;
 import com.api.konditor.infra.jpa.entity.RoleJpaEntity;
@@ -99,8 +99,8 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
     log.info(
         "[ONBOARDING] Workspace criado id={} nome='{}' moeda={}",
         workspaceJpa.getId(),
-        workspaceJpa.getName(),
-        workspaceJpa.getCurrency());
+        workspaceJpa.getNome(),
+        workspaceJpa.getMoeda());
 
     // 4. Vincula usuário como owner
     WorkspaceMember member = criarMembro(workspace, usuario);
@@ -122,7 +122,7 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
         "Workspace",
         workspaceJpa.getId(),
         AuditOperation.CREATE,
-        "{\"event\":\"onboarding\",\"workspace\":\"" + workspaceJpa.getName() + "\"}",
+        "{\"event\":\"onboarding\",\"workspace\":\"" + workspaceJpa.getNome() + "\"}",
         usuarioJpa);
     registrarAuditLog(
         workspaceJpa,
@@ -217,8 +217,8 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
     PlanDetailsJpaEntity planFree = buscarPlanDetails(Plan.free);
 
     WorkspaceJpaEntity jpa = workspaceMapper.toJpa(workspace);
-    jpa.setOwner(ownerJpa);
-    jpa.setPlan(planFree);
+    jpa.setProprietario(ownerJpa);
+    jpa.setPlano(planFree);
 
     return workspaceRepository.save(jpa);
   }
@@ -228,11 +228,11 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
     RoleJpaEntity roleOwner = buscarRole(Role.owner);
 
     WorkspaceMemberJpaEntity jpa = workspaceMemberMapper.toJpa(member);
-    jpa.setWorkspace(workspaceJpa);
-    jpa.setUser(usuarioJpa);
-    jpa.setRole(roleOwner);
-    jpa.setInvitedBy(null);
-    jpa.setCreatedBy(usuarioJpa);
+    jpa.setEspacoTrabalho(workspaceJpa);
+    jpa.setUsuario(usuarioJpa);
+    jpa.setPapel(roleOwner);
+    jpa.setConvidadoPor(null);
+    jpa.setCriadoPor(usuarioJpa);
 
     return workspaceMemberRepository.save(jpa);
   }
@@ -308,8 +308,8 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
       WorkspaceJpaEntity workspaceJpa, UsuarioAutenticado usuarioAutenticado) {
     return new OnboardingResponse(
         workspaceJpa.getId().toString(),
-        workspaceJpa.getName(),
-        workspaceJpa.getCurrency(),
+        workspaceJpa.getNome(),
+        workspaceJpa.getMoeda(),
         Role.owner,
         Plan.free,
         new DadosUsuarioResponse(

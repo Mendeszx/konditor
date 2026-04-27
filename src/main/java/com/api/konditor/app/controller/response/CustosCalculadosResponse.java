@@ -77,4 +77,34 @@ public class CustosCalculadosResponse {
 
   /** Margem desejada utilizada no cálculo. */
   private BigDecimal margemUtilizada;
+
+  /**
+   * Número de unidades/porções calculado automaticamente quando {@code pesoPorUnidade} é informado.
+   * Fórmula: {@code rendimentoQuantidade (em unidade base) / pesoPorUnidade (em unidade base)}.
+   */
+  private BigDecimal numeroPorcoesUnidades;
+
+  /**
+   * Custo total por grama ou mililitro — disponível quando a unidade de rendimento é peso ou
+   * volume. Fórmula: {@code custoTotal / rendimentoQuantidade (convertido para base g ou ml)}.
+   */
+  private BigDecimal custoPorGramaOuMl;
+
+  /**
+   * Preço sugerido por grama ou mililitro — disponível quando a unidade de rendimento é peso ou
+   * volume. Fórmula: {@code precoSugerido / rendimentoQuantidade (convertido para base g ou ml)}.
+   */
+  private BigDecimal precoPorGramaOuMl;
+
+  /**
+   * Custo por unidade/porção — disponível quando {@code pesoPorUnidade} é informado. Fórmula:
+   * {@code custoTotal / numeroPorcoesUnidades}.
+   */
+  private BigDecimal custoPorPorcaoOuUnidade;
+
+  /**
+   * Preço sugerido por unidade/porção — disponível quando {@code pesoPorUnidade} é informado.
+   * Fórmula: {@code precoSugerido / numeroPorcoesUnidades}.
+   */
+  private BigDecimal precoPorPorcaoOuUnidade;
 }

@@ -1,4 +1,4 @@
-package com.api.konditor.domain.useCase;
+package com.api.konditor.domain.usecase;
 
 import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.request.CalcularCustosRequest;
