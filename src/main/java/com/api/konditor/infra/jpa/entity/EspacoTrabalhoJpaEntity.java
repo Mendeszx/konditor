@@ -13,7 +13,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class WorkspaceJpaEntity {
+public class EspacoTrabalhoJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -25,11 +25,11 @@ public class WorkspaceJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "proprietario_id", nullable = false)
-  private UserJpaEntity proprietario;
+  private UsuarioJpaEntity proprietario;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "plano_id", nullable = false)
-  private PlanDetailsJpaEntity plano;
+  private DetalhesPlanoJpaEntity plano;
 
   @Column(nullable = false)
   private String moeda;

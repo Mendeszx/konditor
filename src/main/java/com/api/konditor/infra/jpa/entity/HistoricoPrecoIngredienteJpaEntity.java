@@ -14,7 +14,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class IngredientPriceHistoryJpaEntity {
+public class HistoricoPrecoIngredienteJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -23,7 +23,7 @@ public class IngredientPriceHistoryJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "ingrediente_id", nullable = false)
-  private IngredientJpaEntity ingredient;
+  private IngredienteJpaEntity ingredient;
 
   @Column(name = "preco_antigo", nullable = false, precision = 19, scale = 4)
   private BigDecimal oldPrice;
@@ -36,7 +36,7 @@ public class IngredientPriceHistoryJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "alterado_por")
-  private UserJpaEntity changedBy;
+  private UsuarioJpaEntity changedBy;
 
   @PrePersist
   void prePersist() {

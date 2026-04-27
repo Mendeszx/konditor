@@ -1,12 +1,12 @@
 package com.api.konditor.infra.jpa.mapper;
 
 import com.api.konditor.domain.entity.WorkspaceMember;
-import com.api.konditor.infra.jpa.entity.WorkspaceMemberJpaEntity;
+import com.api.konditor.infra.jpa.entity.MembroEspacoTrabalhoJpaEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 
 /**
- * Mapper MapStruct entre {@link WorkspaceMemberJpaEntity} (infra) e {@link WorkspaceMember}
+ * Mapper MapStruct entre {@link MembroEspacoTrabalhoJpaEntity} (infra) e {@link WorkspaceMember}
  * (domínio).
  */
 @Mapper(
@@ -14,7 +14,7 @@ import org.mapstruct.MappingConstants;
     uses = {WorkspaceJpaMapper.class, UserJpaMapper.class, RoleJpaMapper.class})
 public interface WorkspaceMemberJpaMapper {
 
-  WorkspaceMember toDomain(WorkspaceMemberJpaEntity entity);
+  WorkspaceMember toDomain(MembroEspacoTrabalhoJpaEntity entity);
 
-  WorkspaceMemberJpaEntity toJpa(WorkspaceMember domain);
+  MembroEspacoTrabalhoJpaEntity toJpa(WorkspaceMember domain);
 }

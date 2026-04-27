@@ -1,24 +1,24 @@
 package com.api.konditor.infra.jpa.mapper;
 
 import com.api.konditor.domain.enuns.Role;
-import com.api.konditor.infra.jpa.entity.RoleJpaEntity;
+import com.api.konditor.infra.jpa.entity.PapelJpaEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 
 /**
- * Mapper MapStruct entre {@link RoleJpaEntity} (infra) e {@link Role} (domínio). Converte o campo
+ * Mapper MapStruct entre {@link PapelJpaEntity} (infra) e {@link Role} (domínio). Converte o campo
  * {@code name} da entidade para o enum {@link Role} e vice-versa.
  */
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface RoleJpaMapper {
 
-  default Role toDomain(RoleJpaEntity entity) {
+  default Role toDomain(PapelJpaEntity entity) {
     if (entity == null) return null;
     return Role.valueOf(entity.getNome());
   }
 
-  default RoleJpaEntity toJpa(Role role) {
+  default PapelJpaEntity toJpa(Role role) {
     if (role == null) return null;
-    return RoleJpaEntity.builder().nome(role.name()).build();
+    return PapelJpaEntity.builder().nome(role.name()).build();
   }
 }

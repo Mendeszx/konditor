@@ -1,6 +1,6 @@
 package com.api.konditor.infra.jpa.repository;
 
-import com.api.konditor.infra.jpa.entity.RefreshTokenJpaEntity;
+import com.api.konditor.infra.jpa.entity.TokenAtualizacaoJpaEntity;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -8,9 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
-public interface RefreshTokenJpaRepository extends JpaRepository<RefreshTokenJpaEntity, UUID> {
+public interface RefreshTokenJpaRepository extends JpaRepository<TokenAtualizacaoJpaEntity, UUID> {
 
-  Optional<RefreshTokenJpaEntity> findByToken(String token);
+  Optional<TokenAtualizacaoJpaEntity> findByToken(String token);
 
   @Modifying
   @Query(

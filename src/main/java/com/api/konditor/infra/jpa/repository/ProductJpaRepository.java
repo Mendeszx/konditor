@@ -1,7 +1,7 @@
 package com.api.konditor.infra.jpa.repository;
 
 import com.api.konditor.domain.enuns.RecipeStatus;
-import com.api.konditor.infra.jpa.entity.ProductJpaEntity;
+import com.api.konditor.infra.jpa.entity.ProdutoJpaEntity;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -9,14 +9,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-/** Repositório Spring Data JPA para {@link ProductJpaEntity}. */
-public interface ProductJpaRepository extends JpaRepository<ProductJpaEntity, UUID> {
+/** Repositório Spring Data JPA para {@link ProdutoJpaEntity}. */
+public interface ProductJpaRepository extends JpaRepository<ProdutoJpaEntity, UUID> {
 
-  List<ProductJpaEntity> findAllByWorkspaceIdAndDeletedAtIsNull(UUID workspaceId);
+  List<ProdutoJpaEntity> findAllByWorkspaceIdAndDeletedAtIsNull(UUID workspaceId);
 
-  Optional<ProductJpaEntity> findByIdAndDeletedAtIsNull(UUID id);
+  Optional<ProdutoJpaEntity> findByIdAndDeletedAtIsNull(UUID id);
 
-  Optional<ProductJpaEntity> findByIdAndWorkspaceIdAndDeletedAtIsNull(UUID id, UUID workspaceId);
+  Optional<ProdutoJpaEntity> findByIdAndWorkspaceIdAndDeletedAtIsNull(UUID id, UUID workspaceId);
 
   boolean existsByWorkspaceIdAndNameIgnoreCaseAndDeletedAtIsNull(UUID workspaceId, String name);
 
@@ -40,7 +40,7 @@ public interface ProductJpaRepository extends JpaRepository<ProductJpaEntity, UU
         AND p.status = :status
       ORDER BY p.name ASC
       """)
-  List<ProductJpaEntity> findAllActiveByWorkspaceIdWithDetails(
+  List<ProdutoJpaEntity> findAllActiveByWorkspaceIdWithDetails(
       @Param("workspaceId") UUID workspaceId, @Param("status") RecipeStatus status);
 
   /**

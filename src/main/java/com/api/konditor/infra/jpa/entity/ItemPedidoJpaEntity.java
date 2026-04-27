@@ -6,19 +6,15 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
-/** Entidade JPA que mapeia a tabela {@code conversoes_unidade}. */
+/** Entidade JPA que mapeia a tabela {@code itens_pedido}. */
 @Entity
-@Table(
-    name = "conversoes_unidade",
-    schema = "konditor",
-    uniqueConstraints =
-        @UniqueConstraint(columnNames = {"unidade_origem_id", "unidade_destino_id"}))
+@Table(name = "itens_pedido", schema = "konditor")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UnitConversionJpaEntity {
+public class ItemPedidoJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -26,15 +22,26 @@ public class UnitConversionJpaEntity {
   private UUID id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "unidade_origem_id", nullable = false)
-  private UnitJpaEntity fromUnit;
+  @JoinColumn(name = "pedido_id", nullable = false)
+  private PedidoJpaEntity order;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "unidade_destino_id", nullable = false)
-  private UnitJpaEntity toUnit;
+  @JoinColumn(name = "produto_id", nullable = false)
+  private ProdutoJpaEntity product;
 
-  @Column(name = "fator", nullable = false, precision = 19, scale = 6)
-  private BigDecimal factor;
+  @Column(name = "quantidade", nullable = false, precision = 19, scale = 4)
+  private BigDecimal quantity;
+
+  /**
+   * Snapshot do preço de venda no momento da criação do pedido. Protege o histórico financeiro de
+   * mudanças futuras no preço do produto.
+   */
+  @Column(name = "preco_unitario_na_epoca", nullable = false, precision = 19, scale = 4)
+  private BigDecimal unitPriceAtTime;
+
+  /** Personalização do item (ex: "escrita: Feliz Aniversário Maria"). */
+  @Column(name = "notas", columnDefinition = "text")
+  private String notes;
 
   @Column(name = "criado_em", nullable = false, updatable = false)
   private Instant createdAt;
@@ -47,11 +54,11 @@ public class UnitConversionJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "criado_por")
-  private UserJpaEntity createdBy;
+  private UsuarioJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "atualizado_por")
-  private UserJpaEntity updatedBy;
+  private UsuarioJpaEntity updatedBy;
 
   @PrePersist
   void prePersist() {

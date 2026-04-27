@@ -6,15 +6,18 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
-/** Entidade JPA que mapeia a tabela {@code itens_pedido}. */
+/** Entidade JPA que mapeia a tabela {@code receitas_como_ingrediente}. */
 @Entity
-@Table(name = "itens_pedido", schema = "konditor")
+@Table(
+    name = "receitas_como_ingrediente",
+    schema = "konditor",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"produto_id", "receita_ingrediente_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OrderItemJpaEntity {
+public class ReceitaComoIngredienteJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -22,26 +25,20 @@ public class OrderItemJpaEntity {
   private UUID id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "pedido_id", nullable = false)
-  private OrderJpaEntity order;
-
-  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "produto_id", nullable = false)
-  private ProductJpaEntity product;
+  private ProdutoJpaEntity product;
 
+  /** Sub-receita usada como ingrediente. */
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "receita_ingrediente_id", nullable = false)
+  private ProdutoJpaEntity subReceita;
+
+  /** Quantidade de unidades da sub-receita utilizada (na unidade de rendimento dela). */
   @Column(name = "quantidade", nullable = false, precision = 19, scale = 4)
-  private BigDecimal quantity;
+  private BigDecimal quantidade;
 
-  /**
-   * Snapshot do preço de venda no momento da criação do pedido. Protege o histórico financeiro de
-   * mudanças futuras no preço do produto.
-   */
-  @Column(name = "preco_unitario_na_epoca", nullable = false, precision = 19, scale = 4)
-  private BigDecimal unitPriceAtTime;
-
-  /** Personalização do item (ex: "escrita: Feliz Aniversário Maria"). */
   @Column(name = "notas", columnDefinition = "text")
-  private String notes;
+  private String notas;
 
   @Column(name = "criado_em", nullable = false, updatable = false)
   private Instant createdAt;
@@ -54,11 +51,11 @@ public class OrderItemJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "criado_por")
-  private UserJpaEntity createdBy;
+  private UsuarioJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "atualizado_por")
-  private UserJpaEntity updatedBy;
+  private UsuarioJpaEntity updatedBy;
 
   @PrePersist
   void prePersist() {

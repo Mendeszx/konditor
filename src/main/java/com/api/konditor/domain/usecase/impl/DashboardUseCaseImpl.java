@@ -7,9 +7,9 @@ import com.api.konditor.app.controller.response.ReceitaCardResponse;
 import com.api.konditor.app.exception.DashboardException;
 import com.api.konditor.domain.enuns.RecipeStatus;
 import com.api.konditor.domain.usecase.DashboardUseCase;
-import com.api.konditor.infra.jpa.entity.ProductCategoryJpaEntity;
-import com.api.konditor.infra.jpa.entity.ProductJpaEntity;
-import com.api.konditor.infra.jpa.entity.UnitJpaEntity;
+import com.api.konditor.infra.jpa.entity.CategoriaProdutoJpaEntity;
+import com.api.konditor.infra.jpa.entity.ProdutoJpaEntity;
+import com.api.konditor.infra.jpa.entity.UnidadeJpaEntity;
 import com.api.konditor.infra.jpa.repository.ProductJpaRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -56,7 +56,7 @@ public class DashboardUseCaseImpl implements DashboardUseCase {
     UUID workspaceId = resolverWorkspaceId(usuario);
     log.info("[DASHBOARD-STATS] Buscando estatísticas para workspaceId={}", workspaceId);
 
-    List<ProductJpaEntity> receitas =
+    List<ProdutoJpaEntity> receitas =
         productRepository.findAllActiveByWorkspaceIdWithDetails(
             workspaceId, RecipeStatus.publicada);
 
@@ -83,7 +83,7 @@ public class DashboardUseCaseImpl implements DashboardUseCase {
     // Receitas onde a margem real ficou abaixo da meta do próprio usuário
     int receitasAbaixoMargemDesejada = 0;
     for (int i = 0; i < receitas.size(); i++) {
-      ProductJpaEntity p = receitas.get(i);
+      ProdutoJpaEntity p = receitas.get(i);
       int margemReal = margens.get(i).setScale(0, RoundingMode.HALF_UP).intValue();
       int meta =
           p.getDesiredMargin() != null
@@ -95,7 +95,7 @@ public class DashboardUseCaseImpl implements DashboardUseCase {
     }
 
     int melhorIndice = encontrarIndiceMelhorMargem(margens);
-    ProductJpaEntity melhorProduto = receitas.get(melhorIndice);
+    ProdutoJpaEntity melhorProduto = receitas.get(melhorIndice);
     int melhorMargemInt = margens.get(melhorIndice).setScale(0, RoundingMode.HALF_UP).intValue();
     MelhorMargemResponse melhorMargem =
         new MelhorMargemResponse(
@@ -128,7 +128,7 @@ public class DashboardUseCaseImpl implements DashboardUseCase {
     log.info(
         "[DASHBOARD-RECEITAS] Listando receitas status={} — workspaceId={}", status, workspaceId);
 
-    List<ProductJpaEntity> receitas =
+    List<ProdutoJpaEntity> receitas =
         productRepository.findAllActiveByWorkspaceIdWithDetails(workspaceId, status);
 
     List<ReceitaCardResponse> cards = receitas.stream().map(this::montarCard).toList();
@@ -144,7 +144,7 @@ public class DashboardUseCaseImpl implements DashboardUseCase {
   // Construção do card de receita
   // =========================================================================
 
-  private ReceitaCardResponse montarCard(ProductJpaEntity produto) {
+  private ReceitaCardResponse montarCard(ProdutoJpaEntity produto) {
     BigDecimal margem = calcularMargem(produto);
     int margemInt = margem.setScale(0, RoundingMode.HALF_UP).intValue();
     int margemDesejadaInt =
@@ -161,9 +161,9 @@ public class DashboardUseCaseImpl implements DashboardUseCase {
       margemStatus = "normal";
     }
 
-    ProductCategoryJpaEntity category = produto.getCategory();
-    UnitJpaEntity yieldUnit = produto.getYieldUnit();
-    UnitJpaEntity weightUnit = produto.getUnitWeightUnit();
+    CategoriaProdutoJpaEntity category = produto.getCategory();
+    UnidadeJpaEntity yieldUnit = produto.getYieldUnit();
+    UnidadeJpaEntity weightUnit = produto.getUnitWeightUnit();
 
     BigDecimal yieldQty =
         (produto.getYieldQuantity() != null
@@ -293,7 +293,7 @@ public class DashboardUseCaseImpl implements DashboardUseCase {
    * <p>Retorna {@code 100} quando {@code calculatedCost} é nulo (sem ingredientes cadastrados — sem
    * custo registrado, portanto margem total).
    */
-  private BigDecimal calcularMargem(ProductJpaEntity produto) {
+  private BigDecimal calcularMargem(ProdutoJpaEntity produto) {
     BigDecimal sellingPrice = produto.getSellingPrice();
     if (sellingPrice == null || sellingPrice.compareTo(BigDecimal.ZERO) == 0) {
       return BigDecimal.ZERO;

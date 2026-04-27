@@ -12,10 +12,10 @@ import com.api.konditor.domain.enuns.SubscriptionStatus;
 import com.api.konditor.domain.usecase.AuthUseCase;
 import com.api.konditor.infra.googleprovider.GoogleIdentityProvider;
 import com.api.konditor.infra.googleprovider.response.GoogleUserResponse;
-import com.api.konditor.infra.jpa.entity.RefreshTokenJpaEntity;
-import com.api.konditor.infra.jpa.entity.UserJpaEntity;
-import com.api.konditor.infra.jpa.entity.WorkspaceJpaEntity;
-import com.api.konditor.infra.jpa.entity.WorkspaceMemberJpaEntity;
+import com.api.konditor.infra.jpa.entity.EspacoTrabalhoJpaEntity;
+import com.api.konditor.infra.jpa.entity.MembroEspacoTrabalhoJpaEntity;
+import com.api.konditor.infra.jpa.entity.TokenAtualizacaoJpaEntity;
+import com.api.konditor.infra.jpa.entity.UsuarioJpaEntity;
 import com.api.konditor.infra.jpa.repository.RefreshTokenJpaRepository;
 import com.api.konditor.infra.jpa.repository.SubscriptionJpaRepository;
 import com.api.konditor.infra.jpa.repository.UserJpaRepository;
@@ -73,7 +73,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
     GoogleUserResponse dadosGoogle = googleIdentityProvider.verificar(idToken);
     log.debug("[AUTH] Token Google validado para email={}", dadosGoogle.getEmail());
 
-    UserJpaEntity usuario = upsertUsuario(dadosGoogle);
+    UsuarioJpaEntity usuario = upsertUsuario(dadosGoogle);
     log.info("[AUTH] Usuário autenticado id={} email={}", usuario.getId(), usuario.getEmail());
 
     // Usuário novo (sem workspace) → token de onboarding, workspace null no response
@@ -82,7 +82,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
           "[AUTH] Usuário id={} sem workspace ativo — emitindo token de onboarding",
           usuario.getId());
       String tokenOnboarding = jwtService.gerarTokenOnboarding(usuario);
-      RefreshTokenJpaEntity refreshToken = criarRefreshToken(usuario);
+      TokenAtualizacaoJpaEntity refreshToken = criarRefreshToken(usuario);
       adicionarCookie(response, refreshToken);
       return new GoogleAuthResponse(
           tokenOnboarding,
@@ -102,7 +102,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
             new JwtService.ContextoToken(
                 usuario, ctx.workspace().getId().toString(), role, ctx.plan()));
 
-    RefreshTokenJpaEntity refreshToken = criarRefreshToken(usuario);
+    TokenAtualizacaoJpaEntity refreshToken = criarRefreshToken(usuario);
     adicionarCookie(response, refreshToken);
 
     log.debug(
@@ -123,8 +123,8 @@ public class AuthUseCaseImpl implements AuthUseCase {
   public RenovarTokenResponse renovarToken(String refreshToken, HttpServletResponse response) {
     log.debug("[AUTH] Renovação de token solicitada");
 
-    RefreshTokenJpaEntity tokenAntigo = validarRefreshToken(refreshToken);
-    UserJpaEntity usuario =
+    TokenAtualizacaoJpaEntity tokenAntigo = validarRefreshToken(refreshToken);
+    UsuarioJpaEntity usuario =
         userRepository
             .findById(tokenAntigo.getUserId())
             .orElseThrow(() -> new AuthException("Usuário não encontrado"));
@@ -135,7 +135,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
 
     WorkspaceContext ctx = resolverWorkspace(usuario);
 
-    RefreshTokenJpaEntity novoToken = criarRefreshToken(usuario);
+    TokenAtualizacaoJpaEntity novoToken = criarRefreshToken(usuario);
     adicionarCookie(response, novoToken);
 
     Role role = Role.valueOf(ctx.member().getPapel().getNome());
@@ -171,7 +171,8 @@ public class AuthUseCaseImpl implements AuthUseCase {
    * Escreve o refresh token em cookie HttpOnly com flags de segurança: {@code Secure}, {@code
    * HttpOnly}, {@code SameSite=Strict}, path restrito.
    */
-  private void adicionarCookie(HttpServletResponse response, RefreshTokenJpaEntity refreshToken) {
+  private void adicionarCookie(
+      HttpServletResponse response, TokenAtualizacaoJpaEntity refreshToken) {
     long maxAge = refreshToken.getExpiresAt().getEpochSecond() - Instant.now().getEpochSecond();
     if (maxAge <= 0) {
       log.warn("[AUTH] Tentativa de emitir cookie com token já expirado — ignorado");
@@ -209,9 +210,9 @@ public class AuthUseCaseImpl implements AuthUseCase {
   // =========================================================================
 
   /** Cria e persiste um novo refresh token para o usuário. */
-  private RefreshTokenJpaEntity criarRefreshToken(UserJpaEntity usuario) {
-    RefreshTokenJpaEntity token =
-        RefreshTokenJpaEntity.builder()
+  private TokenAtualizacaoJpaEntity criarRefreshToken(UsuarioJpaEntity usuario) {
+    TokenAtualizacaoJpaEntity token =
+        TokenAtualizacaoJpaEntity.builder()
             .token(UUID.randomUUID().toString())
             .userId(usuario.getId())
             .expiresAt(Instant.now().plusSeconds(refreshExpiracaoEmSegundos))
@@ -226,8 +227,8 @@ public class AuthUseCaseImpl implements AuthUseCase {
    * <p>Implementa detecção de roubo (reuse detection): se um token já revogado for apresentado,
    * todas as sessões do usuário são imediatamente encerradas.
    */
-  private RefreshTokenJpaEntity validarRefreshToken(String valorToken) {
-    RefreshTokenJpaEntity token =
+  private TokenAtualizacaoJpaEntity validarRefreshToken(String valorToken) {
+    TokenAtualizacaoJpaEntity token =
         refreshTokenRepository
             .findByToken(valorToken)
             .orElseThrow(() -> new AuthException("Refresh token não encontrado"));
@@ -253,7 +254,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
    * Revoga um único token (rotação após emissão do novo). A entidade está gerenciada pelo JPA na
    * transação — não é necessário chamar save().
    */
-  private void revogarToken(RefreshTokenJpaEntity token) {
+  private void revogarToken(TokenAtualizacaoJpaEntity token) {
     token.setRevoked(true);
     log.debug("[AUTH] Refresh token revogado id={}", token.getId());
   }
@@ -267,7 +268,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
    * gerenciada pelo JPA é atualizada automaticamente via dirty checking — não é necessário chamar
    * save() explicitamente no branch de update.
    */
-  private UserJpaEntity upsertUsuario(GoogleUserResponse dados) {
+  private UsuarioJpaEntity upsertUsuario(GoogleUserResponse dados) {
     return userRepository
         .findByGoogleId(dados.getGoogleId())
         .map(
@@ -280,7 +281,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
             () -> {
               log.info("[AUTH] Novo usuário criado via Google email={}", dados.getEmail());
               return userRepository.save(
-                  UserJpaEntity.builder()
+                  UsuarioJpaEntity.builder()
                       .idGoogle(dados.getGoogleId())
                       .email(dados.getEmail())
                       .nome(dados.getName())
@@ -289,7 +290,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
   }
 
   /** Verifica se o usuário possui ao menos um workspace ativo (sem soft-delete). */
-  private boolean possuiWorkspaceAtivo(UserJpaEntity usuario) {
+  private boolean possuiWorkspaceAtivo(UsuarioJpaEntity usuario) {
     return !workspaceRepository.findAllByOwnerIdAndDeletedAtIsNull(usuario.getId()).isEmpty();
   }
 
@@ -297,18 +298,18 @@ public class AuthUseCaseImpl implements AuthUseCase {
    * Resolve o workspace ativo do usuário, seu papel e o plano da assinatura. Ignora workspaces com
    * soft-delete e usa o mais recente como workspace ativo.
    */
-  private WorkspaceContext resolverWorkspace(UserJpaEntity usuario) {
+  private WorkspaceContext resolverWorkspace(UsuarioJpaEntity usuario) {
     UUID userId = usuario.getId();
 
-    List<WorkspaceJpaEntity> workspaces =
+    List<EspacoTrabalhoJpaEntity> workspaces =
         workspaceRepository.findAllByOwnerIdAndDeletedAtIsNull(userId);
     if (workspaces.isEmpty()) {
       throw new AuthException("Usuário não possui nenhum workspace ativo.");
     }
 
-    WorkspaceJpaEntity workspace = workspaces.get(0);
+    EspacoTrabalhoJpaEntity workspace = workspaces.get(0);
 
-    WorkspaceMemberJpaEntity member =
+    MembroEspacoTrabalhoJpaEntity member =
         workspaceMemberRepository
             .findByWorkspaceIdAndUser_Id(workspace.getId(), userId)
             .orElseThrow(
@@ -325,5 +326,5 @@ public class AuthUseCaseImpl implements AuthUseCase {
   }
 
   private record WorkspaceContext(
-      WorkspaceJpaEntity workspace, WorkspaceMemberJpaEntity member, Plan plan) {}
+      EspacoTrabalhoJpaEntity workspace, MembroEspacoTrabalhoJpaEntity member, Plan plan) {}
 }

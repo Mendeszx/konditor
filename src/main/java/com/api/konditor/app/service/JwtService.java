@@ -2,7 +2,7 @@ package com.api.konditor.app.service;
 
 import com.api.konditor.domain.enuns.Plan;
 import com.api.konditor.domain.enuns.Role;
-import com.api.konditor.infra.jpa.entity.UserJpaEntity;
+import com.api.konditor.infra.jpa.entity.UsuarioJpaEntity;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -55,7 +55,7 @@ public class JwtService {
    * @param plan plano do workspace
    */
   public record ContextoToken(
-      UserJpaEntity usuario, String workspaceId, Role workspaceRole, Plan plan) {}
+      UsuarioJpaEntity usuario, String workspaceId, Role workspaceRole, Plan plan) {}
 
   /**
    * Gera um JWT assinado com as claims do usuário e do workspace ativo.
@@ -88,7 +88,7 @@ public class JwtService {
    * @param usuario entidade JPA do usuário recém-criado
    * @return token JWT compacto assinado, sem claims de workspace
    */
-  public String gerarTokenOnboarding(UserJpaEntity usuario) {
+  public String gerarTokenOnboarding(UsuarioJpaEntity usuario) {
     Instant agora = Instant.now();
     return Jwts.builder()
         .subject(String.valueOf(usuario.getId()))

@@ -6,18 +6,18 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
-/** Entidade JPA que mapeia a tabela {@code receitas_como_ingrediente}. */
+/** Entidade JPA que mapeia a tabela {@code ingredientes_produto}. */
 @Entity
 @Table(
-    name = "receitas_como_ingrediente",
+    name = "ingredientes_produto",
     schema = "konditor",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"produto_id", "receita_ingrediente_id"}))
+    uniqueConstraints = @UniqueConstraint(columnNames = {"produto_id", "ingrediente_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductRecipeIngredientJpaEntity {
+public class IngredienteProdutoJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -26,19 +26,23 @@ public class ProductRecipeIngredientJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "produto_id", nullable = false)
-  private ProductJpaEntity product;
+  private ProdutoJpaEntity product;
 
-  /** Sub-receita usada como ingrediente. */
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "receita_ingrediente_id", nullable = false)
-  private ProductJpaEntity subReceita;
+  @JoinColumn(name = "ingrediente_id", nullable = false)
+  private IngredienteJpaEntity ingredient;
 
-  /** Quantidade de unidades da sub-receita utilizada (na unidade de rendimento dela). */
+  /** Quantidade do ingrediente usada nesta receita. */
   @Column(name = "quantidade", nullable = false, precision = 19, scale = 4)
-  private BigDecimal quantidade;
+  private BigDecimal quantity;
+
+  /** Unidade da quantidade acima (pode diferir da unidade base do ingrediente). */
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "unidade_id", nullable = false)
+  private UnidadeJpaEntity unit;
 
   @Column(name = "notas", columnDefinition = "text")
-  private String notas;
+  private String notes;
 
   @Column(name = "criado_em", nullable = false, updatable = false)
   private Instant createdAt;
@@ -51,11 +55,11 @@ public class ProductRecipeIngredientJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "criado_por")
-  private UserJpaEntity createdBy;
+  private UsuarioJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "atualizado_por")
-  private UserJpaEntity updatedBy;
+  private UsuarioJpaEntity updatedBy;
 
   @PrePersist
   void prePersist() {

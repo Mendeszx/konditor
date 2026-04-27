@@ -13,7 +13,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RefreshTokenJpaEntity {
+public class TokenAtualizacaoJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)

@@ -1,30 +1,40 @@
 package com.api.konditor.infra.jpa.entity;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
-/** Entidade JPA que mapeia a tabela {@code categorias_produto}. */
+/** Entidade JPA que mapeia a tabela {@code conversoes_unidade}. */
 @Entity
-@Table(name = "categorias_produto", schema = "konditor")
+@Table(
+    name = "conversoes_unidade",
+    schema = "konditor",
+    uniqueConstraints =
+        @UniqueConstraint(columnNames = {"unidade_origem_id", "unidade_destino_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductCategoryJpaEntity {
+public class ConversaoUnidadeJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
   @Column(columnDefinition = "uuid", updatable = false, nullable = false)
   private UUID id;
 
-  @Column(name = "nome", nullable = false, unique = true)
-  private String name;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "unidade_origem_id", nullable = false)
+  private UnidadeJpaEntity fromUnit;
 
-  @Column(name = "cor")
-  private String color;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "unidade_destino_id", nullable = false)
+  private UnidadeJpaEntity toUnit;
+
+  @Column(name = "fator", nullable = false, precision = 19, scale = 6)
+  private BigDecimal factor;
 
   @Column(name = "criado_em", nullable = false, updatable = false)
   private Instant createdAt;
@@ -37,11 +47,11 @@ public class ProductCategoryJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "criado_por")
-  private UserJpaEntity createdBy;
+  private UsuarioJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "atualizado_por")
-  private UserJpaEntity updatedBy;
+  private UsuarioJpaEntity updatedBy;
 
   @PrePersist
   void prePersist() {

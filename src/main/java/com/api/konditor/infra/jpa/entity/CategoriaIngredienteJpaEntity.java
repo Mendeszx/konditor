@@ -13,7 +13,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class IngredientCategoryJpaEntity {
+public class CategoriaIngredienteJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -37,11 +37,11 @@ public class IngredientCategoryJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "criado_por")
-  private UserJpaEntity createdBy;
+  private UsuarioJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "atualizado_por")
-  private UserJpaEntity updatedBy;
+  private UsuarioJpaEntity updatedBy;
 
   @PrePersist
   void prePersist() {

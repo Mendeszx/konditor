@@ -1,6 +1,6 @@
 package com.api.konditor.infra.jpa.repository;
 
-import com.api.konditor.infra.jpa.entity.IngredientCategoryJpaEntity;
+import com.api.konditor.infra.jpa.entity.CategoriaIngredienteJpaEntity;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -8,16 +8,16 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * Repositório para {@link IngredientCategoryJpaEntity}.
+ * Repositório para {@link CategoriaIngredienteJpaEntity}.
  *
  * <p>Categorias são globais — não filtradas por workspace.
  */
 public interface IngredientCategoryJpaRepository
-    extends JpaRepository<IngredientCategoryJpaEntity, UUID> {
+    extends JpaRepository<CategoriaIngredienteJpaEntity, UUID> {
 
-  List<IngredientCategoryJpaEntity> findAllByDeletedAtIsNull(Sort sort);
+  List<CategoriaIngredienteJpaEntity> findAllByDeletedAtIsNull(Sort sort);
 
-  Optional<IngredientCategoryJpaEntity> findByIdAndDeletedAtIsNull(UUID id);
+  Optional<CategoriaIngredienteJpaEntity> findByIdAndDeletedAtIsNull(UUID id);
 
   boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name);
 }

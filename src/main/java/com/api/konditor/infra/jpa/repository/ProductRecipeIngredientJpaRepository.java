@@ -1,15 +1,15 @@
 package com.api.konditor.infra.jpa.repository;
 
-import com.api.konditor.infra.jpa.entity.ProductRecipeIngredientJpaEntity;
+import com.api.konditor.infra.jpa.entity.ReceitaComoIngredienteJpaEntity;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-/** Repositório Spring Data JPA para {@link ProductRecipeIngredientJpaEntity}. */
+/** Repositório Spring Data JPA para {@link ReceitaComoIngredienteJpaEntity}. */
 public interface ProductRecipeIngredientJpaRepository
-    extends JpaRepository<ProductRecipeIngredientJpaEntity, UUID> {
+    extends JpaRepository<ReceitaComoIngredienteJpaEntity, UUID> {
 
   void deleteAllByProductId(UUID productId);
 
@@ -25,6 +25,6 @@ public interface ProductRecipeIngredientJpaRepository
       WHERE ri.product.id = :productId
         AND ri.deletedAt IS NULL
       """)
-  List<ProductRecipeIngredientJpaEntity> findAllByProductIdWithDetails(
+  List<ReceitaComoIngredienteJpaEntity> findAllByProductIdWithDetails(
       @Param("productId") UUID productId);
 }

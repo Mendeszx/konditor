@@ -13,7 +13,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserJpaEntity {
+public class UsuarioJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)

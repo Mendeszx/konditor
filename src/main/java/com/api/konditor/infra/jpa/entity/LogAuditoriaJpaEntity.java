@@ -23,7 +23,7 @@ import org.hibernate.type.SqlTypes;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AuditLogJpaEntity {
+public class LogAuditoriaJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -32,7 +32,7 @@ public class AuditLogJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "espaco_trabalho_id", nullable = false)
-  private WorkspaceJpaEntity workspace;
+  private EspacoTrabalhoJpaEntity workspace;
 
   @Column(name = "nome_entidade", nullable = false)
   private String entityName;
@@ -58,7 +58,7 @@ public class AuditLogJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "realizado_por")
-  private UserJpaEntity performedBy;
+  private UsuarioJpaEntity performedBy;
 
   @Column(name = "realizado_em", nullable = false, updatable = false)
   private Instant performedAt;

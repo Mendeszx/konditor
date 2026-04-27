@@ -10,16 +10,16 @@ import com.api.konditor.app.controller.response.PaginaResponse;
 import com.api.konditor.app.exception.IngredienteException;
 import com.api.konditor.domain.enuns.AuditOperation;
 import com.api.konditor.domain.usecase.IngredienteUseCase;
-import com.api.konditor.infra.jpa.entity.AuditLogJpaEntity;
-import com.api.konditor.infra.jpa.entity.IngredientCategoryJpaEntity;
-import com.api.konditor.infra.jpa.entity.IngredientJpaEntity;
-import com.api.konditor.infra.jpa.entity.IngredientPriceHistoryJpaEntity;
-import com.api.konditor.infra.jpa.entity.ProductIngredientJpaEntity;
-import com.api.konditor.infra.jpa.entity.ProductJpaEntity;
-import com.api.konditor.infra.jpa.entity.UnitConversionJpaEntity;
-import com.api.konditor.infra.jpa.entity.UnitJpaEntity;
-import com.api.konditor.infra.jpa.entity.UserJpaEntity;
-import com.api.konditor.infra.jpa.entity.WorkspaceJpaEntity;
+import com.api.konditor.infra.jpa.entity.CategoriaIngredienteJpaEntity;
+import com.api.konditor.infra.jpa.entity.ConversaoUnidadeJpaEntity;
+import com.api.konditor.infra.jpa.entity.EspacoTrabalhoJpaEntity;
+import com.api.konditor.infra.jpa.entity.HistoricoPrecoIngredienteJpaEntity;
+import com.api.konditor.infra.jpa.entity.IngredienteJpaEntity;
+import com.api.konditor.infra.jpa.entity.IngredienteProdutoJpaEntity;
+import com.api.konditor.infra.jpa.entity.LogAuditoriaJpaEntity;
+import com.api.konditor.infra.jpa.entity.ProdutoJpaEntity;
+import com.api.konditor.infra.jpa.entity.UnidadeJpaEntity;
+import com.api.konditor.infra.jpa.entity.UsuarioJpaEntity;
 import com.api.konditor.infra.jpa.repository.AuditLogJpaRepository;
 import com.api.konditor.infra.jpa.repository.IngredientCategoryJpaRepository;
 import com.api.konditor.infra.jpa.repository.IngredientJpaRepository;
@@ -80,15 +80,15 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
 
     PageRequest pageRequest = PageRequest.of(pagina, tamanho);
 
-    Page<IngredientJpaEntity> page =
+    Page<IngredienteJpaEntity> page =
         categoriaId != null
             ? ingredientRepository.findPageByWorkspaceIdAndCategoryId(
                 workspaceId, categoriaId, pageRequest)
             : ingredientRepository.findPageByWorkspaceId(workspaceId, pageRequest);
 
-    List<UUID> ids = page.getContent().stream().map(IngredientJpaEntity::getId).toList();
+    List<UUID> ids = page.getContent().stream().map(IngredienteJpaEntity::getId).toList();
 
-    Map<UUID, IngredientPriceHistoryJpaEntity> historicoPorId =
+    Map<UUID, HistoricoPrecoIngredienteJpaEntity> historicoPorId =
         ids.isEmpty()
             ? Map.of()
             : priceHistoryRepository.findMostRecentByIngredientIds(ids).stream()
@@ -136,14 +136,14 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
     validarNomeUnico(request.getNome(), workspaceId, null);
     validarCodigoUnico(request.getCodigo(), workspaceId, null);
 
-    WorkspaceJpaEntity workspace = buscarWorkspace(workspaceId);
-    UnitJpaEntity unit = buscarUnidade(request.getUnidadeId());
-    IngredientCategoryJpaEntity category =
+    EspacoTrabalhoJpaEntity workspace = buscarWorkspace(workspaceId);
+    UnidadeJpaEntity unit = buscarUnidade(request.getUnidadeId());
+    CategoriaIngredienteJpaEntity category =
         request.getCategoriaId() != null ? buscarCategoria(request.getCategoriaId()) : null;
-    UserJpaEntity createdBy = buscarUsuario(UUID.fromString(usuario.id()));
+    UsuarioJpaEntity createdBy = buscarUsuario(UUID.fromString(usuario.id()));
 
-    IngredientJpaEntity entity =
-        IngredientJpaEntity.builder()
+    IngredienteJpaEntity entity =
+        IngredienteJpaEntity.builder()
             .workspace(workspace)
             .name(request.getNome().trim())
             .code(request.getCodigo())
@@ -176,7 +176,7 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
   public IngredienteResponse buscarPorId(UUID id, UsuarioAutenticado usuario) {
     UUID workspaceId = resolverWorkspaceId(usuario);
     log.debug("[INGREDIENTE] Buscando por id={} — workspaceId={}", id, workspaceId);
-    IngredientJpaEntity entity = buscarIngrediente(id, workspaceId);
+    IngredienteJpaEntity entity = buscarIngrediente(id, workspaceId);
     return montarResponse(entity);
   }
 
@@ -187,14 +187,14 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
     UUID workspaceId = resolverWorkspaceId(usuario);
     log.info("[INGREDIENTE] Atualizando ingrediente id={} — workspaceId={}", id, workspaceId);
 
-    IngredientJpaEntity entity = buscarIngrediente(id, workspaceId);
+    IngredienteJpaEntity entity = buscarIngrediente(id, workspaceId);
     validarNomeUnico(request.getNome(), workspaceId, id);
     validarCodigoUnico(request.getCodigo(), workspaceId, id);
 
-    UnitJpaEntity unit = buscarUnidade(request.getUnidadeId());
-    IngredientCategoryJpaEntity category =
+    UnidadeJpaEntity unit = buscarUnidade(request.getUnidadeId());
+    CategoriaIngredienteJpaEntity category =
         request.getCategoriaId() != null ? buscarCategoria(request.getCategoriaId()) : null;
-    UserJpaEntity updatedBy = buscarUsuario(UUID.fromString(usuario.id()));
+    UsuarioJpaEntity updatedBy = buscarUsuario(UUID.fromString(usuario.id()));
 
     entity.setName(request.getNome().trim());
     entity.setCode(request.getCodigo());
@@ -237,8 +237,8 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
    *   <li>Atualiza {@code calculatedCost} e {@code suggestedPrice} via dirty-checking JPA.
    * </ol>
    */
-  private void recalcularReceitasAfetadas(IngredientJpaEntity ingrediente) {
-    List<ProductIngredientJpaEntity> linhasAfetadas =
+  private void recalcularReceitasAfetadas(IngredienteJpaEntity ingrediente) {
+    List<IngredienteProdutoJpaEntity> linhasAfetadas =
         productIngredientRepository.findAllByIngredientIdWithDetails(ingrediente.getId());
 
     if (linhasAfetadas.isEmpty()) {
@@ -247,24 +247,24 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
     }
 
     // Distinct products via Map (preserva a entidade gerenciada)
-    Map<UUID, ProductJpaEntity> produtosAfetados =
+    Map<UUID, ProdutoJpaEntity> produtosAfetados =
         linhasAfetadas.stream()
             .collect(
                 Collectors.toMap(
                     pi -> pi.getProduct().getId(),
-                    ProductIngredientJpaEntity::getProduct,
+                    IngredienteProdutoJpaEntity::getProduct,
                     (a, b) -> a));
 
-    for (ProductJpaEntity produto : produtosAfetados.values()) {
+    for (ProdutoJpaEntity produto : produtosAfetados.values()) {
       // Carrega TODAS as linhas do produto (não só as do ingrediente alterado)
-      List<ProductIngredientJpaEntity> todasLinhas =
+      List<IngredienteProdutoJpaEntity> todasLinhas =
           productIngredientRepository.findAllByProductIdWithDetails(produto.getId());
 
       BigDecimal custoTotal =
           todasLinhas.stream()
               .map(
                   pi -> {
-                    IngredientJpaEntity ing = pi.getIngredient();
+                    IngredienteJpaEntity ing = pi.getIngredient();
                     BigDecimal fator = resolverFatorConversao(pi.getUnit(), ing.getUnit());
                     return ing.getCostPerUnit()
                         .multiply(pi.getQuantity().multiply(fator))
@@ -295,12 +295,12 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
    * Retorna 1 se as unidades forem iguais ou se não houver conversão cadastrada.
    */
   private BigDecimal resolverFatorConversao(
-      UnitJpaEntity unidadeReceita, UnitJpaEntity unidadeBase) {
+      UnidadeJpaEntity unidadeReceita, UnidadeJpaEntity unidadeBase) {
     if (unidadeReceita == null || unidadeBase == null) return BigDecimal.ONE;
     if (unidadeReceita.getId().equals(unidadeBase.getId())) return BigDecimal.ONE;
     return unitConversionRepository
         .findByFromUnitIdAndToUnitId(unidadeReceita.getId(), unidadeBase.getId())
-        .map(UnitConversionJpaEntity::getFactor)
+        .map(ConversaoUnidadeJpaEntity::getFactor)
         .orElse(BigDecimal.ONE);
   }
 
@@ -309,7 +309,7 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
   // =========================================================================
 
   private IngredienteCardResponse toCard(
-      IngredientJpaEntity i, IngredientPriceHistoryJpaEntity historico) {
+      IngredienteJpaEntity i, HistoricoPrecoIngredienteJpaEntity historico) {
 
     BigDecimal variacao = null;
     if (historico != null && historico.getOldPrice().compareTo(BigDecimal.ZERO) != 0) {
@@ -322,7 +322,7 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
               .setScale(2, RoundingMode.HALF_UP);
     }
 
-    IngredientCategoryJpaEntity cat = i.getCategory();
+    CategoriaIngredienteJpaEntity cat = i.getCategory();
 
     return IngredienteCardResponse.builder()
         .id(i.getId().toString())
@@ -346,9 +346,9 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
     return UUID.fromString(wid);
   }
 
-  private IngredienteResponse montarResponse(IngredientJpaEntity i) {
-    IngredientCategoryJpaEntity cat = i.getCategory();
-    UnitJpaEntity unit = i.getUnit();
+  private IngredienteResponse montarResponse(IngredienteJpaEntity i) {
+    CategoriaIngredienteJpaEntity cat = i.getCategory();
+    UnidadeJpaEntity unit = i.getUnit();
 
     return IngredienteResponse.builder()
         .id(i.getId().toString())
@@ -380,7 +380,7 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
     if (!existe) return;
 
     if (idExcluir != null) {
-      Optional<IngredientJpaEntity> existente =
+      Optional<IngredienteJpaEntity> existente =
           ingredientRepository.findByIdAndWorkspaceIdAndDeletedAtIsNull(idExcluir, workspaceId);
       if (existente.isPresent() && existente.get().getName().equalsIgnoreCase(nome.trim())) {
         return; // mesmo ingrediente — update sem mudar nome
@@ -398,7 +398,7 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
   private void validarCodigoUnico(String codigo, UUID workspaceId, UUID idExcluir) {
     if (codigo == null || codigo.isBlank()) return;
 
-    Optional<IngredientJpaEntity> existente =
+    Optional<IngredienteJpaEntity> existente =
         ingredientRepository.findByWorkspaceIdAndCodeAndDeletedAtIsNull(workspaceId, codigo.trim());
 
     if (existente.isEmpty()) return;
@@ -411,13 +411,13 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
         "Já existe um ingrediente com o código '" + codigo.trim() + "' neste workspace.");
   }
 
-  private WorkspaceJpaEntity buscarWorkspace(UUID workspaceId) {
+  private EspacoTrabalhoJpaEntity buscarWorkspace(UUID workspaceId) {
     return workspaceRepository
         .findByIdAndDeletedAtIsNull(workspaceId)
         .orElseThrow(() -> new IngredienteException("Workspace não encontrado."));
   }
 
-  private IngredientCategoryJpaEntity buscarCategoria(UUID categoriaId) {
+  private CategoriaIngredienteJpaEntity buscarCategoria(UUID categoriaId) {
     return categoryRepository
         .findByIdAndDeletedAtIsNull(categoriaId)
         .orElseThrow(
@@ -426,20 +426,20 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
                     "Categoria de ingrediente não encontrada: " + categoriaId));
   }
 
-  private UnitJpaEntity buscarUnidade(UUID unidadeId) {
+  private UnidadeJpaEntity buscarUnidade(UUID unidadeId) {
     return unitRepository
         .findByIdAndDeletedAtIsNull(unidadeId)
         .orElseThrow(
             () -> new IngredienteException("Unidade de medida não encontrada: " + unidadeId));
   }
 
-  private IngredientJpaEntity buscarIngrediente(UUID id, UUID workspaceId) {
+  private IngredienteJpaEntity buscarIngrediente(UUID id, UUID workspaceId) {
     return ingredientRepository
         .findByIdAndWorkspaceIdAndDeletedAtIsNull(id, workspaceId)
         .orElseThrow(() -> new IngredienteException("Ingrediente não encontrado: " + id));
   }
 
-  private UserJpaEntity buscarUsuario(UUID userId) {
+  private UsuarioJpaEntity buscarUsuario(UUID userId) {
     return userRepository
         .findById(userId)
         .orElseThrow(() -> new IngredienteException("Usuário não encontrado: " + userId));
@@ -450,14 +450,14 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
   // =========================================================================
 
   private void registrarAuditLog(
-      WorkspaceJpaEntity workspace,
+      EspacoTrabalhoJpaEntity workspace,
       String entityName,
       UUID entityId,
       AuditOperation operation,
       String dataAfter,
-      UserJpaEntity performedBy) {
+      UsuarioJpaEntity performedBy) {
     auditLogRepository.save(
-        AuditLogJpaEntity.builder()
+        LogAuditoriaJpaEntity.builder()
             .workspace(workspace)
             .entityName(entityName)
             .entityId(entityId)

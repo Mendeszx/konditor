@@ -1,19 +1,19 @@
 package com.api.konditor.infra.jpa.repository;
 
-import com.api.konditor.infra.jpa.entity.ProductIngredientJpaEntity;
+import com.api.konditor.infra.jpa.entity.IngredienteProdutoJpaEntity;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-/** Repositório Spring Data JPA para {@link ProductIngredientJpaEntity}. */
+/** Repositório Spring Data JPA para {@link IngredienteProdutoJpaEntity}. */
 public interface ProductIngredientJpaRepository
-    extends JpaRepository<ProductIngredientJpaEntity, UUID> {
+    extends JpaRepository<IngredienteProdutoJpaEntity, UUID> {
 
-  List<ProductIngredientJpaEntity> findAllByProductIdAndDeletedAtIsNull(UUID productId);
+  List<IngredienteProdutoJpaEntity> findAllByProductIdAndDeletedAtIsNull(UUID productId);
 
-  List<ProductIngredientJpaEntity> findAllByIngredientIdAndDeletedAtIsNull(UUID ingredientId);
+  List<IngredienteProdutoJpaEntity> findAllByIngredientIdAndDeletedAtIsNull(UUID ingredientId);
 
   void deleteAllByProductId(UUID productId);
 
@@ -30,7 +30,7 @@ public interface ProductIngredientJpaRepository
       WHERE pi.product.id = :productId
         AND pi.deletedAt IS NULL
       """)
-  List<ProductIngredientJpaEntity> findAllByProductIdWithDetails(
+  List<IngredienteProdutoJpaEntity> findAllByProductIdWithDetails(
       @Param("productId") UUID productId);
 
   /**
@@ -51,6 +51,6 @@ public interface ProductIngredientJpaRepository
         AND pi.deletedAt IS NULL
         AND p.deletedAt IS NULL
       """)
-  List<ProductIngredientJpaEntity> findAllByIngredientIdWithDetails(
+  List<IngredienteProdutoJpaEntity> findAllByIngredientIdWithDetails(
       @Param("ingredientId") UUID ingredientId);
 }

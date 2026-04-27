@@ -16,7 +16,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class WorkspaceMemberJpaEntity {
+public class MembroEspacoTrabalhoJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -25,19 +25,19 @@ public class WorkspaceMemberJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "espaco_trabalho_id", nullable = false)
-  private WorkspaceJpaEntity espacoTrabalho;
+  private EspacoTrabalhoJpaEntity espacoTrabalho;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "usuario_id", nullable = false)
-  private UserJpaEntity usuario;
+  private UsuarioJpaEntity usuario;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "papel", referencedColumnName = "nome", nullable = false)
-  private RoleJpaEntity papel;
+  private PapelJpaEntity papel;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "convidado_por")
-  private UserJpaEntity convidadoPor;
+  private UsuarioJpaEntity convidadoPor;
 
   @Column(name = "entrou_em")
   private Instant entrouEm;
@@ -53,11 +53,11 @@ public class WorkspaceMemberJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "criado_por")
-  private UserJpaEntity criadoPor;
+  private UsuarioJpaEntity criadoPor;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "atualizado_por")
-  private UserJpaEntity atualizadoPor;
+  private UsuarioJpaEntity atualizadoPor;
 
   @PrePersist
   void prePersist() {

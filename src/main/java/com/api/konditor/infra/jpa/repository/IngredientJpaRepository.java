@@ -1,6 +1,6 @@
 package com.api.konditor.infra.jpa.repository;
 
-import com.api.konditor.infra.jpa.entity.IngredientJpaEntity;
+import com.api.konditor.infra.jpa.entity.IngredienteJpaEntity;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -10,18 +10,19 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-/** Repositório Spring Data JPA para {@link IngredientJpaEntity}. */
-public interface IngredientJpaRepository extends JpaRepository<IngredientJpaEntity, UUID> {
+/** Repositório Spring Data JPA para {@link IngredienteJpaEntity}. */
+public interface IngredientJpaRepository extends JpaRepository<IngredienteJpaEntity, UUID> {
 
-  List<IngredientJpaEntity> findAllByWorkspaceIdAndDeletedAtIsNull(UUID workspaceId);
+  List<IngredienteJpaEntity> findAllByWorkspaceIdAndDeletedAtIsNull(UUID workspaceId);
 
-  Optional<IngredientJpaEntity> findByIdAndDeletedAtIsNull(UUID id);
+  Optional<IngredienteJpaEntity> findByIdAndDeletedAtIsNull(UUID id);
 
-  Optional<IngredientJpaEntity> findByIdAndWorkspaceIdAndDeletedAtIsNull(UUID id, UUID workspaceId);
+  Optional<IngredienteJpaEntity> findByIdAndWorkspaceIdAndDeletedAtIsNull(
+      UUID id, UUID workspaceId);
 
   boolean existsByWorkspaceIdAndNameIgnoreCaseAndDeletedAtIsNull(UUID workspaceId, String name);
 
-  Optional<IngredientJpaEntity> findByWorkspaceIdAndCodeAndDeletedAtIsNull(
+  Optional<IngredienteJpaEntity> findByWorkspaceIdAndCodeAndDeletedAtIsNull(
       UUID workspaceId, String code);
 
   long countByWorkspaceIdAndDeletedAtIsNull(UUID workspaceId);
@@ -46,7 +47,7 @@ public interface IngredientJpaRepository extends JpaRepository<IngredientJpaEnti
           WHERE i.workspace.id = :workspaceId
             AND i.deletedAt IS NULL
           """)
-  Page<IngredientJpaEntity> findPageByWorkspaceId(
+  Page<IngredienteJpaEntity> findPageByWorkspaceId(
       @Param("workspaceId") UUID workspaceId, Pageable pageable);
 
   /** Listagem paginada filtrada por categoria. */
@@ -68,7 +69,7 @@ public interface IngredientJpaRepository extends JpaRepository<IngredientJpaEnti
             AND i.category.id = :categoryId
             AND i.deletedAt IS NULL
           """)
-  Page<IngredientJpaEntity> findPageByWorkspaceIdAndCategoryId(
+  Page<IngredienteJpaEntity> findPageByWorkspaceIdAndCategoryId(
       @Param("workspaceId") UUID workspaceId,
       @Param("categoryId") UUID categoryId,
       Pageable pageable);
@@ -87,6 +88,6 @@ public interface IngredientJpaRepository extends JpaRepository<IngredientJpaEnti
         AND LOWER(i.name) LIKE LOWER(CONCAT('%', :query, '%'))
       ORDER BY i.name ASC
       """)
-  List<IngredientJpaEntity> searchByWorkspaceAndName(
+  List<IngredienteJpaEntity> searchByWorkspaceAndName(
       @Param("workspaceId") UUID workspaceId, @Param("query") String query);
 }

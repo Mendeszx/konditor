@@ -3,20 +3,21 @@ package com.api.konditor.infra.jpa.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.UUID;
 import lombok.*;
 
-/** Entidade JPA que mapeia a tabela {@code pedidos}. */
+/** Entidade JPA que mapeia a tabela {@code ingredientes}. */
 @Entity
-@Table(name = "pedidos", schema = "konditor")
+@Table(
+    name = "ingredientes",
+    schema = "konditor",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"espaco_trabalho_id", "nome"}))
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OrderJpaEntity {
+public class IngredienteJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -25,34 +26,30 @@ public class OrderJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "espaco_trabalho_id", nullable = false)
-  private WorkspaceJpaEntity workspace;
+  private EspacoTrabalhoJpaEntity workspace;
 
-  @Column(name = "nome_cliente")
-  private String clientName;
+  @Column(name = "nome", nullable = false)
+  private String name;
 
-  @Column(name = "telefone_cliente")
-  private String clientPhone;
+  @Column(name = "codigo")
+  private String code;
 
-  @Column(name = "status", nullable = false)
-  private String status;
+  @Column(name = "descricao", columnDefinition = "text")
+  private String description;
 
-  @Column(name = "data_entrega")
-  private LocalDate deliveryDate;
+  @Column(name = "marca")
+  private String brand;
 
-  @Column(name = "hora_entrega")
-  private LocalTime deliveryTime;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "categoria_id")
+  private CategoriaIngredienteJpaEntity category;
 
-  @Column(name = "eh_entrega", nullable = false)
-  private boolean isDelivery;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "unidade_id", nullable = false)
+  private UnidadeJpaEntity unit;
 
-  @Column(name = "endereco_entrega", columnDefinition = "text")
-  private String deliveryAddress;
-
-  @Column(name = "preco_total", precision = 19, scale = 4)
-  private BigDecimal totalPrice;
-
-  @Column(name = "desconto_centavos", nullable = false)
-  private Integer discountCents;
+  @Column(name = "custo_por_unidade", nullable = false, precision = 19, scale = 4)
+  private BigDecimal costPerUnit;
 
   @Column(name = "notas", columnDefinition = "text")
   private String notes;
@@ -68,17 +65,17 @@ public class OrderJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "criado_por")
-  private UserJpaEntity createdBy;
+  private UsuarioJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "atualizado_por")
-  private UserJpaEntity updatedBy;
+  private UsuarioJpaEntity updatedBy;
 
   @PrePersist
   void prePersist() {
     this.createdAt = Instant.now();
-    if (this.discountCents == null) {
-      this.discountCents = 0;
+    if (this.costPerUnit == null) {
+      this.costPerUnit = BigDecimal.ZERO;
     }
   }
 

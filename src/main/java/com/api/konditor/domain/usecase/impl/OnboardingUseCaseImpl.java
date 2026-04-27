@@ -14,13 +14,13 @@ import com.api.konditor.domain.enuns.Plan;
 import com.api.konditor.domain.enuns.Role;
 import com.api.konditor.domain.enuns.SubscriptionStatus;
 import com.api.konditor.domain.usecase.OnboardingUseCase;
-import com.api.konditor.infra.jpa.entity.AuditLogJpaEntity;
-import com.api.konditor.infra.jpa.entity.PlanDetailsJpaEntity;
-import com.api.konditor.infra.jpa.entity.RoleJpaEntity;
-import com.api.konditor.infra.jpa.entity.SubscriptionJpaEntity;
-import com.api.konditor.infra.jpa.entity.UserJpaEntity;
-import com.api.konditor.infra.jpa.entity.WorkspaceJpaEntity;
-import com.api.konditor.infra.jpa.entity.WorkspaceMemberJpaEntity;
+import com.api.konditor.infra.jpa.entity.AssinaturaJpaEntity;
+import com.api.konditor.infra.jpa.entity.DetalhesPlanoJpaEntity;
+import com.api.konditor.infra.jpa.entity.EspacoTrabalhoJpaEntity;
+import com.api.konditor.infra.jpa.entity.LogAuditoriaJpaEntity;
+import com.api.konditor.infra.jpa.entity.MembroEspacoTrabalhoJpaEntity;
+import com.api.konditor.infra.jpa.entity.PapelJpaEntity;
+import com.api.konditor.infra.jpa.entity.UsuarioJpaEntity;
 import com.api.konditor.infra.jpa.mapper.UserJpaMapper;
 import com.api.konditor.infra.jpa.mapper.WorkspaceJpaMapper;
 import com.api.konditor.infra.jpa.mapper.WorkspaceMemberJpaMapper;
@@ -91,11 +91,11 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
 
     // 2. Busca entidade de domínio do usuário
     User usuario = buscarUsuario(userId);
-    UserJpaEntity usuarioJpa = userMapper.toJpa(usuario);
+    UsuarioJpaEntity usuarioJpa = userMapper.toJpa(usuario);
 
     // 3. Cria e persiste o Workspace
     Workspace workspace = criarWorkspace(usuario, request);
-    WorkspaceJpaEntity workspaceJpa = persistirWorkspace(workspace, usuarioJpa);
+    EspacoTrabalhoJpaEntity workspaceJpa = persistirWorkspace(workspace, usuarioJpa);
     log.info(
         "[ONBOARDING] Workspace criado id={} nome='{}' moeda={}",
         workspaceJpa.getId(),
@@ -104,7 +104,7 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
 
     // 4. Vincula usuário como owner
     WorkspaceMember member = criarMembro(workspace, usuario);
-    WorkspaceMemberJpaEntity membroJpa = persistirMembro(member, workspaceJpa, usuarioJpa);
+    MembroEspacoTrabalhoJpaEntity membroJpa = persistirMembro(member, workspaceJpa, usuarioJpa);
     log.info(
         "[ONBOARDING] Usuário id={} vinculado como owner no workspace id={}",
         userId,
@@ -112,7 +112,7 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
 
     // 5. Cria assinatura free
     Subscription subscription = criarSubscription(workspace);
-    SubscriptionJpaEntity subscriptionJpa =
+    AssinaturaJpaEntity subscriptionJpa =
         persistirSubscription(subscription, workspaceJpa, usuarioJpa);
     log.info("[ONBOARDING] Assinatura free criada para workspace id={}", workspaceJpa.getId());
 
@@ -171,7 +171,7 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
   // =========================================================================
 
   private User buscarUsuario(UUID userId) {
-    UserJpaEntity jpa =
+    UsuarioJpaEntity jpa =
         userRepository
             .findById(userId)
             .orElseThrow(() -> new OnboardingException("Usuário não encontrado com id=" + userId));
@@ -213,21 +213,22 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
   // Persistência — converte domínio → JPA e salva
   // =========================================================================
 
-  private WorkspaceJpaEntity persistirWorkspace(Workspace workspace, UserJpaEntity ownerJpa) {
-    PlanDetailsJpaEntity planFree = buscarPlanDetails(Plan.free);
+  private EspacoTrabalhoJpaEntity persistirWorkspace(
+      Workspace workspace, UsuarioJpaEntity ownerJpa) {
+    DetalhesPlanoJpaEntity planFree = buscarPlanDetails(Plan.free);
 
-    WorkspaceJpaEntity jpa = workspaceMapper.toJpa(workspace);
+    EspacoTrabalhoJpaEntity jpa = workspaceMapper.toJpa(workspace);
     jpa.setProprietario(ownerJpa);
     jpa.setPlano(planFree);
 
     return workspaceRepository.save(jpa);
   }
 
-  private WorkspaceMemberJpaEntity persistirMembro(
-      WorkspaceMember member, WorkspaceJpaEntity workspaceJpa, UserJpaEntity usuarioJpa) {
-    RoleJpaEntity roleOwner = buscarRole(Role.owner);
+  private MembroEspacoTrabalhoJpaEntity persistirMembro(
+      WorkspaceMember member, EspacoTrabalhoJpaEntity workspaceJpa, UsuarioJpaEntity usuarioJpa) {
+    PapelJpaEntity roleOwner = buscarRole(Role.owner);
 
-    WorkspaceMemberJpaEntity jpa = workspaceMemberMapper.toJpa(member);
+    MembroEspacoTrabalhoJpaEntity jpa = workspaceMemberMapper.toJpa(member);
     jpa.setEspacoTrabalho(workspaceJpa);
     jpa.setUsuario(usuarioJpa);
     jpa.setPapel(roleOwner);
@@ -237,12 +238,14 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
     return workspaceMemberRepository.save(jpa);
   }
 
-  private SubscriptionJpaEntity persistirSubscription(
-      Subscription subscription, WorkspaceJpaEntity workspaceJpa, UserJpaEntity usuarioJpa) {
-    PlanDetailsJpaEntity planFree = buscarPlanDetails(Plan.free);
+  private AssinaturaJpaEntity persistirSubscription(
+      Subscription subscription,
+      EspacoTrabalhoJpaEntity workspaceJpa,
+      UsuarioJpaEntity usuarioJpa) {
+    DetalhesPlanoJpaEntity planFree = buscarPlanDetails(Plan.free);
 
-    SubscriptionJpaEntity jpa =
-        SubscriptionJpaEntity.builder()
+    AssinaturaJpaEntity jpa =
+        AssinaturaJpaEntity.builder()
             .workspace(workspaceJpa)
             .plan(planFree)
             .status(SubscriptionStatus.active)
@@ -258,14 +261,14 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
   // =========================================================================
 
   private void registrarAuditLog(
-      WorkspaceJpaEntity workspace,
+      EspacoTrabalhoJpaEntity workspace,
       String entityName,
       UUID entityId,
       AuditOperation operation,
       String dataAfter,
-      UserJpaEntity performedBy) {
-    AuditLogJpaEntity entry =
-        AuditLogJpaEntity.builder()
+      UsuarioJpaEntity performedBy) {
+    LogAuditoriaJpaEntity entry =
+        LogAuditoriaJpaEntity.builder()
             .workspace(workspace)
             .entityName(entityName)
             .entityId(entityId)
@@ -282,7 +285,7 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
   // Helpers
   // =========================================================================
 
-  private PlanDetailsJpaEntity buscarPlanDetails(Plan plan) {
+  private DetalhesPlanoJpaEntity buscarPlanDetails(Plan plan) {
     return planDetailsRepository
         .findByName(plan.name())
         .orElseThrow(
@@ -293,7 +296,7 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
                         + ". Verifique os dados de seed."));
   }
 
-  private RoleJpaEntity buscarRole(Role role) {
+  private PapelJpaEntity buscarRole(Role role) {
     return roleRepository
         .findByName(role.name())
         .orElseThrow(
@@ -305,7 +308,7 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
   }
 
   private OnboardingResponse montarResposta(
-      WorkspaceJpaEntity workspaceJpa, UsuarioAutenticado usuarioAutenticado) {
+      EspacoTrabalhoJpaEntity workspaceJpa, UsuarioAutenticado usuarioAutenticado) {
     return new OnboardingResponse(
         workspaceJpa.getId().toString(),
         workspaceJpa.getNome(),

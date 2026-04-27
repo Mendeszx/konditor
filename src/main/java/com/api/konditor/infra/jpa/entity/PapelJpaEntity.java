@@ -12,7 +12,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RoleJpaEntity {
+public class PapelJpaEntity {
 
   /** Identificador técnico do papel (ex: owner, admin, member). */
   @Id

@@ -18,7 +18,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PlanDetailsJpaEntity {
+public class DetalhesPlanoJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)

@@ -14,7 +14,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SubscriptionJpaEntity {
+public class AssinaturaJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -23,11 +23,11 @@ public class SubscriptionJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "espaco_trabalho_id", nullable = false)
-  private WorkspaceJpaEntity workspace;
+  private EspacoTrabalhoJpaEntity workspace;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "plano_id", nullable = false)
-  private PlanDetailsJpaEntity plan;
+  private DetalhesPlanoJpaEntity plan;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false)
@@ -63,11 +63,11 @@ public class SubscriptionJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "criado_por")
-  private UserJpaEntity createdBy;
+  private UsuarioJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "atualizado_por")
-  private UserJpaEntity updatedBy;
+  private UsuarioJpaEntity updatedBy;
 
   @PrePersist
   void prePersist() {

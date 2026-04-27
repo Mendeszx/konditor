@@ -18,7 +18,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductJpaEntity {
+public class ProdutoJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -27,11 +27,11 @@ public class ProductJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "espaco_trabalho_id", nullable = false)
-  private WorkspaceJpaEntity workspace;
+  private EspacoTrabalhoJpaEntity workspace;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "categoria_id")
-  private ProductCategoryJpaEntity category;
+  private CategoriaProdutoJpaEntity category;
 
   @Column(name = "nome", nullable = false)
   private String name;
@@ -51,7 +51,7 @@ public class ProductJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "unidade_rendimento_id")
-  private UnitJpaEntity yieldUnit;
+  private UnidadeJpaEntity yieldUnit;
 
   @Column(name = "custo_calculado", precision = 19, scale = 4)
   private BigDecimal calculatedCost;
@@ -81,7 +81,7 @@ public class ProductJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "unidade_peso_por_unidade_id")
-  private UnitJpaEntity unitWeightUnit;
+  private UnidadeJpaEntity unitWeightUnit;
 
   // -------------------------------------------------------------------------
   // V3 — mão de obra, custos fixos, margem
@@ -148,11 +148,11 @@ public class ProductJpaEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "criado_por")
-  private UserJpaEntity createdBy;
+  private UsuarioJpaEntity createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "atualizado_por")
-  private UserJpaEntity updatedBy;
+  private UsuarioJpaEntity updatedBy;
 
   @PrePersist
   void prePersist() {
