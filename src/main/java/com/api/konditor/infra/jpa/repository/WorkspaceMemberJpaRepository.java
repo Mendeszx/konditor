@@ -11,17 +11,18 @@ import org.springframework.data.jpa.repository.Query;
 public interface WorkspaceMemberJpaRepository
     extends JpaRepository<MembroEspacoTrabalhoJpaEntity, UUID> {
 
-  List<MembroEspacoTrabalhoJpaEntity> findAllByWorkspaceId(UUID workspaceId);
+  List<MembroEspacoTrabalhoJpaEntity> findAllByEspacoTrabalho_Id(UUID workspaceId);
 
-  List<MembroEspacoTrabalhoJpaEntity> findAllByUser_Id(UUID userId);
+  List<MembroEspacoTrabalhoJpaEntity> findAllByUsuario_Id(UUID userId);
 
-  Optional<MembroEspacoTrabalhoJpaEntity> findByWorkspaceIdAndUser_Id(
+  Optional<MembroEspacoTrabalhoJpaEntity> findByEspacoTrabalho_IdAndUsuario_Id(
       UUID workspaceId, UUID userId);
 
   @Query(
-      "SELECT COUNT(m) > 0 FROM WorkspaceMemberJpaEntity m WHERE m.workspace.id = :workspaceId AND"
-          + " m.user.id = :userId AND m.role.name = :roleName")
+      "SELECT COUNT(m) > 0 FROM MembroEspacoTrabalhoJpaEntity m WHERE m.espacoTrabalho.id ="
+          + " :workspaceId AND m.usuario.id = :userId AND m.papel.nome = :roleName")
   boolean existsByWorkspaceIdAndUserIdAndRoleName(UUID workspaceId, UUID userId, String roleName);
 
-  List<MembroEspacoTrabalhoJpaEntity> findAllByWorkspaceIdAndDeletedAtIsNull(UUID workspaceId);
+  List<MembroEspacoTrabalhoJpaEntity> findAllByEspacoTrabalho_IdAndExcluidoEmIsNull(
+      UUID workspaceId);
 }

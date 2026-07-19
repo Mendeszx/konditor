@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 /** Repositório Spring Data JPA para a entidade {@link UsuarioJpaEntity}. */
 public interface UserJpaRepository extends JpaRepository<UsuarioJpaEntity, UUID> {
 
-  Optional<UsuarioJpaEntity> findByGoogleId(String googleId);
+  Optional<UsuarioJpaEntity> findByIdGoogle(String idGoogle);
 
   Optional<UsuarioJpaEntity> findByEmail(String email);
 }

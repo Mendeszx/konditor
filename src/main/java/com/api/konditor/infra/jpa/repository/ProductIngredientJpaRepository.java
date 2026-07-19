@@ -23,7 +23,7 @@ public interface ProductIngredientJpaRepository
    */
   @Query(
       """
-      SELECT pi FROM ProductIngredientJpaEntity pi
+      SELECT pi FROM IngredienteProdutoJpaEntity pi
       LEFT JOIN FETCH pi.ingredient i
       LEFT JOIN FETCH i.unit
       LEFT JOIN FETCH pi.unit
@@ -42,7 +42,7 @@ public interface ProductIngredientJpaRepository
    */
   @Query(
       """
-      SELECT pi FROM ProductIngredientJpaEntity pi
+      SELECT pi FROM IngredienteProdutoJpaEntity pi
       JOIN FETCH pi.product p
       JOIN FETCH pi.ingredient i
       JOIN FETCH i.unit

@@ -157,7 +157,7 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
    */
   private void validarSemWorkspaceAtivo(UUID userId) {
     boolean possuiWorkspace =
-        !workspaceRepository.findAllByOwnerIdAndDeletedAtIsNull(userId).isEmpty();
+        !workspaceRepository.findAllByProprietario_IdAndExcluidoEmIsNull(userId).isEmpty();
     if (possuiWorkspace) {
       log.warn(
           "[ONBOARDING] Onboarding rejeitado — usuário id={} já possui workspace ativo", userId);
@@ -298,7 +298,7 @@ public class OnboardingUseCaseImpl implements OnboardingUseCase {
 
   private PapelJpaEntity buscarRole(Role role) {
     return roleRepository
-        .findByName(role.name())
+        .findByNome(role.name())
         .orElseThrow(
             () ->
                 new OnboardingException(

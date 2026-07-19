@@ -16,11 +16,11 @@ public interface IngredientPriceHistoryJpaRepository
    */
   @Query(
       """
-      SELECT ph FROM IngredientPriceHistoryJpaEntity ph
+      SELECT ph FROM HistoricoPrecoIngredienteJpaEntity ph
       WHERE ph.ingredient.id IN :ingredientIds
         AND ph.changedAt = (
             SELECT MAX(ph2.changedAt)
-            FROM IngredientPriceHistoryJpaEntity ph2
+            FROM HistoricoPrecoIngredienteJpaEntity ph2
             WHERE ph2.ingredient.id = ph.ingredient.id
         )
       """)

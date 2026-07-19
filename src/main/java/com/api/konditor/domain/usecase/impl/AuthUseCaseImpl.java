@@ -270,7 +270,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
    */
   private UsuarioJpaEntity upsertUsuario(GoogleUserResponse dados) {
     return userRepository
-        .findByGoogleId(dados.getGoogleId())
+        .findByIdGoogle(dados.getGoogleId())
         .map(
             existente -> {
               existente.setEmail(dados.getEmail());
@@ -291,7 +291,9 @@ public class AuthUseCaseImpl implements AuthUseCase {
 
   /** Verifica se o usuário possui ao menos um workspace ativo (sem soft-delete). */
   private boolean possuiWorkspaceAtivo(UsuarioJpaEntity usuario) {
-    return !workspaceRepository.findAllByOwnerIdAndDeletedAtIsNull(usuario.getId()).isEmpty();
+    return !workspaceRepository
+        .findAllByProprietario_IdAndExcluidoEmIsNull(usuario.getId())
+        .isEmpty();
   }
 
   /**
@@ -302,7 +304,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
     UUID userId = usuario.getId();
 
     List<EspacoTrabalhoJpaEntity> workspaces =
-        workspaceRepository.findAllByOwnerIdAndDeletedAtIsNull(userId);
+        workspaceRepository.findAllByProprietario_IdAndExcluidoEmIsNull(userId);
     if (workspaces.isEmpty()) {
       throw new AuthException("Usuário não possui nenhum workspace ativo.");
     }
@@ -311,7 +313,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
 
     MembroEspacoTrabalhoJpaEntity member =
         workspaceMemberRepository
-            .findByWorkspaceIdAndUser_Id(workspace.getId(), userId)
+            .findByEspacoTrabalho_IdAndUsuario_Id(workspace.getId(), userId)
             .orElseThrow(
                 () ->
                     new AuthException("Usuário não é membro do workspace id=" + workspace.getId()));

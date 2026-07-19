@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 /** Repositório Spring Data JPA para {@link PapelJpaEntity}. */
 public interface RoleJpaRepository extends JpaRepository<PapelJpaEntity, String> {
 
-  Optional<PapelJpaEntity> findByName(String name);
+  Optional<PapelJpaEntity> findByNome(String nome);
 }

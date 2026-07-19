@@ -9,9 +9,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 /** Repositório Spring Data JPA para {@link EspacoTrabalhoJpaEntity}. */
 public interface WorkspaceJpaRepository extends JpaRepository<EspacoTrabalhoJpaEntity, UUID> {
 
-  List<EspacoTrabalhoJpaEntity> findAllByOwnerId(UUID ownerId);
+  List<EspacoTrabalhoJpaEntity> findAllByProprietario_Id(UUID ownerId);
 
-  Optional<EspacoTrabalhoJpaEntity> findByIdAndDeletedAtIsNull(UUID id);
+  Optional<EspacoTrabalhoJpaEntity> findByIdAndExcluidoEmIsNull(UUID id);
 
-  List<EspacoTrabalhoJpaEntity> findAllByOwnerIdAndDeletedAtIsNull(UUID ownerId);
+  List<EspacoTrabalhoJpaEntity> findAllByProprietario_IdAndExcluidoEmIsNull(UUID ownerId);
 }

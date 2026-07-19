@@ -235,7 +235,7 @@ class ReceitaUseCaseImplTest {
     @DisplayName("Workspace nao encontrado lanca ReceitaException")
     void criar_workspaceNaoEncontrado_lancaExcecao() {
       CriarReceitaRequest req = criarRequest("Torta", null, null);
-      when(workspaceRepository.findByIdAndDeletedAtIsNull(WORKSPACE_ID))
+      when(workspaceRepository.findByIdAndExcluidoEmIsNull(WORKSPACE_ID))
           .thenReturn(Optional.empty());
 
       assertThatThrownBy(() -> sut.criar(req, usuario))
@@ -2123,7 +2123,7 @@ class ReceitaUseCaseImplTest {
   }
 
   private void mockWorkspace() {
-    when(workspaceRepository.findByIdAndDeletedAtIsNull(WORKSPACE_ID))
+    when(workspaceRepository.findByIdAndExcluidoEmIsNull(WORKSPACE_ID))
         .thenReturn(Optional.of(workspace));
   }
 

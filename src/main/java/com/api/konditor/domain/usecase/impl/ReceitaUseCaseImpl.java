@@ -995,7 +995,7 @@ public class ReceitaUseCaseImpl implements ReceitaUseCase {
 
   private EspacoTrabalhoJpaEntity buscarWorkspace(UUID workspaceId) {
     return workspaceRepository
-        .findByIdAndDeletedAtIsNull(workspaceId)
+        .findByIdAndExcluidoEmIsNull(workspaceId)
         .orElseThrow(() -> new ReceitaException("Workspace não encontrado."));
   }
 

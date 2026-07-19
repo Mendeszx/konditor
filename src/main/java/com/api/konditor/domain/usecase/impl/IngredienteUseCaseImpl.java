@@ -413,7 +413,7 @@ public class IngredienteUseCaseImpl implements IngredienteUseCase {
 
   private EspacoTrabalhoJpaEntity buscarWorkspace(UUID workspaceId) {
     return workspaceRepository
-        .findByIdAndDeletedAtIsNull(workspaceId)
+        .findByIdAndExcluidoEmIsNull(workspaceId)
         .orElseThrow(() -> new IngredienteException("Workspace não encontrado."));
   }
 

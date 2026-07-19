@@ -19,7 +19,7 @@ public interface ProductRecipeIngredientJpaRepository
    */
   @Query(
       """
-      SELECT ri FROM ProductRecipeIngredientJpaEntity ri
+      SELECT ri FROM ReceitaComoIngredienteJpaEntity ri
       LEFT JOIN FETCH ri.subReceita sr
       LEFT JOIN FETCH sr.yieldUnit
       WHERE ri.product.id = :productId

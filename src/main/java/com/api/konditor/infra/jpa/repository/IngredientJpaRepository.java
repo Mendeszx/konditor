@@ -34,7 +34,7 @@ public interface IngredientJpaRepository extends JpaRepository<IngredienteJpaEnt
   @Query(
       value =
           """
-          SELECT i FROM IngredientJpaEntity i
+          SELECT i FROM IngredienteJpaEntity i
           LEFT JOIN FETCH i.unit
           LEFT JOIN FETCH i.category
           WHERE i.workspace.id = :workspaceId
@@ -43,7 +43,7 @@ public interface IngredientJpaRepository extends JpaRepository<IngredienteJpaEnt
           """,
       countQuery =
           """
-          SELECT COUNT(i) FROM IngredientJpaEntity i
+          SELECT COUNT(i) FROM IngredienteJpaEntity i
           WHERE i.workspace.id = :workspaceId
             AND i.deletedAt IS NULL
           """)
@@ -54,7 +54,7 @@ public interface IngredientJpaRepository extends JpaRepository<IngredienteJpaEnt
   @Query(
       value =
           """
-          SELECT i FROM IngredientJpaEntity i
+          SELECT i FROM IngredienteJpaEntity i
           LEFT JOIN FETCH i.unit
           LEFT JOIN FETCH i.category
           WHERE i.workspace.id = :workspaceId
@@ -64,7 +64,7 @@ public interface IngredientJpaRepository extends JpaRepository<IngredienteJpaEnt
           """,
       countQuery =
           """
-          SELECT COUNT(i) FROM IngredientJpaEntity i
+          SELECT COUNT(i) FROM IngredienteJpaEntity i
           WHERE i.workspace.id = :workspaceId
             AND i.category.id = :categoryId
             AND i.deletedAt IS NULL
@@ -81,7 +81,7 @@ public interface IngredientJpaRepository extends JpaRepository<IngredienteJpaEnt
    */
   @Query(
       """
-      SELECT i FROM IngredientJpaEntity i
+      SELECT i FROM IngredienteJpaEntity i
       LEFT JOIN FETCH i.unit
       WHERE i.workspace.id = :workspaceId
         AND i.deletedAt IS NULL

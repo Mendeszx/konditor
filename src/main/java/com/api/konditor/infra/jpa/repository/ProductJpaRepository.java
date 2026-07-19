@@ -31,7 +31,7 @@ public interface ProductJpaRepository extends JpaRepository<ProdutoJpaEntity, UU
    */
   @Query(
       """
-      SELECT p FROM ProductJpaEntity p
+      SELECT p FROM ProdutoJpaEntity p
       LEFT JOIN FETCH p.category
       LEFT JOIN FETCH p.yieldUnit
       WHERE p.workspace.id = :workspaceId
@@ -49,7 +49,7 @@ public interface ProductJpaRepository extends JpaRepository<ProdutoJpaEntity, UU
    */
   @Query(
       """
-      SELECT COUNT(p) FROM ProductJpaEntity p
+      SELECT COUNT(p) FROM ProdutoJpaEntity p
       WHERE p.workspace.id = :workspaceId
         AND p.deletedAt IS NULL
         AND p.isActive = true
