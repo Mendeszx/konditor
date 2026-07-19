@@ -130,6 +130,11 @@ Detalhes de segurança:
   `GET /actuator/health/**`. **Todos os demais exigem JWT válido.**
 - O `workspaceId` do usuário vem das claims do JWT (`UsuarioAutenticado`) — garantindo o
   isolamento multi-tenant.
+- `JWT_SECRET` é **obrigatório** (sem default): a aplicação falha ao iniciar sem ele
+  (`JwtService` valida presença e tamanho mínimo de 32 caracteres).
+- **Rate limiting por IP** nos endpoints públicos de auth (`AuthRateLimitFilter`): por padrão
+  10 requisições/60s por IP em `/auth/google` e `/auth/refresh`; excedentes recebem `429` com
+  header `Retry-After`. Limites configuráveis via `RATE_LIMIT_*`.
 - Um job agendado (`TokenCleanupScheduler`) remove refresh tokens expirados diariamente
   (cron configurável via `TOKEN_CLEANUP_CRON`).
 
@@ -242,8 +247,9 @@ psql -d konditor -f src/main/resources/database/schema_completo.sql
 
 ### 2. Configure as variáveis de ambiente
 
-No mínimo, aponte para o seu banco e defina o client ID do Google. Para desenvolvimento local em
-HTTP, desabilite o cookie seguro:
+No mínimo, aponte para o seu banco, defina o client ID do Google e o `JWT_SECRET` (**obrigatório**
+— a aplicação falha ao iniciar sem ele). Para desenvolvimento local em HTTP, desabilite o cookie
+seguro:
 
 ```bash
 export DB_URL="jdbc:postgresql://localhost:5432/konditor"
@@ -272,8 +278,8 @@ curl http://localhost:8080/actuator/health
 
 ## Configuração (variáveis de ambiente)
 
-Todas as configurações têm defaults em `src/main/resources/application.yaml`. Sobrescreva via
-variáveis de ambiente:
+As configurações têm defaults em `src/main/resources/application.yaml` — exceto `JWT_SECRET`,
+que é obrigatória. Sobrescreva via variáveis de ambiente:
 
 | Variável                        | Default                                   | Descrição                                                  |
 | ------------------------------- | ----------------------------------------- | ---------------------------------------------------------- |
@@ -282,11 +288,15 @@ variáveis de ambiente:
 | `DB_PASS`                       | `postgres`                                | Senha do banco.                                            |
 | `DDL_AUTO`                      | `validate`                                | Modo de DDL do Hibernate (`validate` recomendado).         |
 | `GOOGLE_CLIENT_ID`              | *(default de dev)*                        | Client ID do Google OAuth usado para validar o ID Token.   |
-| `JWT_SECRET`                    | *(default inseguro)*                      | **Defina em produção.** Segredo de assinatura do JWT.      |
+| `JWT_SECRET`                    | *(sem default — obrigatória)*             | **A app não sobe sem ela.** Segredo de assinatura do JWT (mín. 32 chars). |
 | `JWT_EXPIRATION_SECONDS`        | `3600`                                    | Validade do access token (segundos).                       |
 | `JWT_REFRESH_EXPIRATION_SECONDS`| `2592000`                                 | Validade do refresh token (segundos; padrão 30 dias).      |
 | `COOKIE_SECURE`                 | `true`                                    | `false` apenas em dev local (HTTP). Sempre `true` em prod. |
 | `CORS_ALLOWED_ORIGINS`          | `http://127.0.0.1:5500,http://localhost:5500` | Origens permitidas (separadas por vírgula). Nunca use `*` em prod. |
+| `RATE_LIMIT_ENABLED`            | `true`                                    | Habilita rate limiting por IP em `/auth/google` e `/auth/refresh`. |
+| `RATE_LIMIT_MAX_REQUESTS`       | `10`                                      | Máximo de requisições por IP dentro da janela.             |
+| `RATE_LIMIT_WINDOW_SECONDS`     | `60`                                      | Tamanho da janela de rate limiting (segundos).             |
+| `RATE_LIMIT_TRUST_XFF`          | `false`                                   | Usa o IP do `X-Forwarded-For` (habilite só atrás de proxy confiável). |
 | `TOKEN_CLEANUP_CRON`            | `0 0 3 * * *`                             | Cron de limpeza de refresh tokens expirados (03:00 UTC).   |
 | `HEALTH_PROBES_ENABLED`         | `true`                                    | Habilita as probes liveness/readiness do Actuator.         |
 

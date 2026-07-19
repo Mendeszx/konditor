@@ -27,7 +27,8 @@ security:
     client-id: ${GOOGLE_CLIENT_ID:1045651153478-4379bpb4fepqg0gvlg4goktic09vl883.apps.googleusercontent.com}
 
   jwt:
-    secret: ${JWT_SECRET:secret-key-change-me-please-!-if-you-use-jwt-in-production}
+    # Sem default: a aplicação falha ao iniciar se JWT_SECRET não estiver definida (mín. 32 chars).
+    secret: ${JWT_SECRET:}
     # Access token: 15 minutes
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
     # Refresh token: 30 days
@@ -36,6 +37,16 @@ security:
   cookie:
     # false only in local development (HTTP). Always true in production.
     secure: ${COOKIE_SECURE:true}
+
+  rate-limit:
+    # Rate limiting por IP nos endpoints públicos de auth (/auth/google e /auth/refresh).
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    # Máximo de requisições por IP dentro da janela.
+    max-requests: ${RATE_LIMIT_MAX_REQUESTS:10}
+    # Tamanho da janela em segundos.
+    window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
+    # Habilite apenas atrás de proxy/LB confiável para usar o IP do X-Forwarded-For.
+    trust-x-forwarded-for: ${RATE_LIMIT_TRUST_XFF:false}
 
   cors:
     # Comma-separated list of allowed origins. Never use * in production.

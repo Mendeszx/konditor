@@ -36,11 +36,24 @@ public class JwtService {
   private final SecretKey signingKey;
   private final long expiracaoEmSegundos;
 
+  /** Segredo de desenvolvimento público (commitado em .env.example/docker-compose). */
+  private static final String SEGREDO_DEV_PUBLICO = "dev-secret-change-me-please-min-32-chars!";
+
   public JwtService(
       @Value("${security.jwt.secret}") String secret,
       @Value("${security.jwt.expiration-seconds:900}") long expiracaoEmSegundos) {
-    if (secret == null || secret.length() < 32) {
+    if (secret == null || secret.isBlank()) {
+      throw new IllegalStateException(
+          "JWT_SECRET não definida. Configure a variável de ambiente JWT_SECRET com um segredo"
+              + " forte de no mínimo 32 caracteres — a aplicação não sobe sem ela.");
+    }
+    if (secret.length() < 32) {
       throw new IllegalStateException("security.jwt.secret deve ter no mínimo 32 caracteres");
+    }
+    if (SEGREDO_DEV_PUBLICO.equals(secret)) {
+      log.warn(
+          "[SECURITY] JWT_SECRET está usando o segredo de DESENVOLVIMENTO público do repositório."
+              + " Aceitável apenas em ambiente local — NUNCA use este valor em produção.");
     }
     this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     this.expiracaoEmSegundos = expiracaoEmSegundos;
