@@ -27,8 +27,9 @@ security:
     client-id: ${GOOGLE_CLIENT_ID:1045651153478-4379bpb4fepqg0gvlg4goktic09vl883.apps.googleusercontent.com}
 
   jwt:
-    # Sem default: a aplicação falha ao iniciar se JWT_SECRET não estiver definida (mín. 32 chars).
-    secret: ${JWT_SECRET:}
+    # Default apenas para dev local (o mesmo do docker-compose/.env.example). Em produção
+    # (Railway), defina JWT_SECRET — a app loga um alerta [SECURITY] se subir com este valor.
+    secret: ${JWT_SECRET:dev-secret-change-me-please-min-32-chars!}
     # Access token: 15 minutes
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
     # Refresh token: 30 days

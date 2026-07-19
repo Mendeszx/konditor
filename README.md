@@ -130,8 +130,9 @@ Detalhes de segurança:
   `GET /actuator/health/**`. **Todos os demais exigem JWT válido.**
 - O `workspaceId` do usuário vem das claims do JWT (`UsuarioAutenticado`) — garantindo o
   isolamento multi-tenant.
-- `JWT_SECRET` é **obrigatório** (sem default): a aplicação falha ao iniciar sem ele
-  (`JwtService` valida presença e tamanho mínimo de 32 caracteres).
+- `JWT_SECRET` tem um default **apenas de desenvolvimento** (público no repositório): o
+  `JwtService` valida o tamanho mínimo de 32 caracteres e loga um alerta `[SECURITY]` quando o
+  segredo de dev está em uso — **sempre defina `JWT_SECRET` em produção (Railway)**.
 - **Rate limiting por IP** nos endpoints públicos de auth (`AuthRateLimitFilter`): por padrão
   10 requisições/60s por IP em `/auth/google` e `/auth/refresh`; excedentes recebem `429` com
   header `Retry-After`. Limites configuráveis via `RATE_LIMIT_*`.
@@ -247,9 +248,8 @@ psql -d konditor -f src/main/resources/database/schema_completo.sql
 
 ### 2. Configure as variáveis de ambiente
 
-No mínimo, aponte para o seu banco, defina o client ID do Google e o `JWT_SECRET` (**obrigatório**
-— a aplicação falha ao iniciar sem ele). Para desenvolvimento local em HTTP, desabilite o cookie
-seguro:
+No mínimo, aponte para o seu banco e defina o client ID do Google. Para desenvolvimento local em
+HTTP, desabilite o cookie seguro:
 
 ```bash
 export DB_URL="jdbc:postgresql://localhost:5432/konditor"
@@ -278,8 +278,8 @@ curl http://localhost:8080/actuator/health
 
 ## Configuração (variáveis de ambiente)
 
-As configurações têm defaults em `src/main/resources/application.yaml` — exceto `JWT_SECRET`,
-que é obrigatória. Sobrescreva via variáveis de ambiente:
+Todas as configurações têm defaults em `src/main/resources/application.yaml`. Sobrescreva via
+variáveis de ambiente:
 
 | Variável                        | Default                                   | Descrição                                                  |
 | ------------------------------- | ----------------------------------------- | ---------------------------------------------------------- |
@@ -288,7 +288,7 @@ que é obrigatória. Sobrescreva via variáveis de ambiente:
 | `DB_PASS`                       | `postgres`                                | Senha do banco.                                            |
 | `DDL_AUTO`                      | `validate`                                | Modo de DDL do Hibernate (`validate` recomendado).         |
 | `GOOGLE_CLIENT_ID`              | *(default de dev)*                        | Client ID do Google OAuth usado para validar o ID Token.   |
-| `JWT_SECRET`                    | *(sem default — obrigatória)*             | **A app não sobe sem ela.** Segredo de assinatura do JWT (mín. 32 chars). |
+| `JWT_SECRET`                    | *(segredo de dev público)*                | **Defina em produção (Railway).** Mín. 32 chars; a app loga alerta `[SECURITY]` se subir com o default de dev. |
 | `JWT_EXPIRATION_SECONDS`        | `3600`                                    | Validade do access token (segundos).                       |
 | `JWT_REFRESH_EXPIRATION_SECONDS`| `2592000`                                 | Validade do refresh token (segundos; padrão 30 dias).      |
 | `COOKIE_SECURE`                 | `true`                                    | `false` apenas em dev local (HTTP). Sempre `true` em prod. |
