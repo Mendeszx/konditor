@@ -39,6 +39,7 @@ descobrir o preço de venda ideal com base na margem desejada — tudo isolado p
 | Boilerplate       | Lombok                                                  |
 | Formatação        | Spotless + Google Java Format (aplicado no build)      |
 | Build             | Maven (Maven Wrapper incluso)                          |
+| Containers        | Docker + Docker Compose (API + PostgreSQL)             |
 
 ---
 
@@ -193,7 +194,34 @@ Todos os endpoints exigem `Authorization: Bearer <jwt>`, exceto os marcados como
 
 ## Como rodar
 
-### Pré-requisitos
+### Opção A — Docker (recomendado, portátil)
+
+A forma mais simples de rodar em **qualquer máquina**: sobe a API e o PostgreSQL juntos, já com o
+schema aplicado automaticamente. Só requer **Docker** e **Docker Compose**.
+
+```bash
+cp .env.example .env      # opcional: ajuste os valores
+docker compose up --build
+```
+
+- A API sobe em `http://localhost:8080` e o Postgres em `localhost:5432`.
+- O `schema_completo.sql` é aplicado automaticamente na **primeira** subida do banco (via
+  `docker-entrypoint-initdb.d`); o app só inicia depois que o banco fica saudável (`healthcheck`).
+- Para parar: `docker compose down`. Para zerar o banco (recomeçar do schema): `docker compose down -v`.
+
+Verifique com:
+
+```bash
+curl http://localhost:8080/actuator/health
+# {"status":"UP"}
+```
+
+> As variáveis do `.env` sobrescrevem os defaults do compose. Para login real, informe um
+> `GOOGLE_CLIENT_ID` próprio; em produção, defina `JWT_SECRET` forte e `COOKIE_SECURE=true`.
+
+### Opção B — Manual (JDK + PostgreSQL locais)
+
+#### Pré-requisitos
 
 - **JDK 17**
 - **PostgreSQL** em execução com um banco `konditor` disponível
