@@ -1,5 +1,6 @@
 package com.api.konditor.app.controller.request;
 
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
@@ -20,6 +21,7 @@ public class ReceitaComoIngredienteRequest {
   /** Quantidade de unidades da sub-receita (na sua unidade de rendimento). */
   @NotNull(message = "Quantidade é obrigatória")
   @Positive(message = "Quantidade deve ser maior que zero")
+  @DecimalMax(value = LimitesValores.MAX_QUANTIDADE, message = LimitesValores.MSG_MAX_QUANTIDADE)
   private BigDecimal quantidade;
 
   private String notas;

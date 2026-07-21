@@ -3,6 +3,7 @@ package com.api.konditor.app.controller.request;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -38,6 +39,7 @@ public class CriarReceitaRequest {
   /** Quantidade produzida pela receita (ex: 12 para "12 unidades"). */
   @NotNull(message = "Rendimento é obrigatório")
   @Positive(message = "Rendimento deve ser maior que zero")
+  @DecimalMax(value = LimitesValores.MAX_QUANTIDADE, message = LimitesValores.MSG_MAX_QUANTIDADE)
   private BigDecimal rendimentoQuantidade;
 
   /** ID da unidade de rendimento (ex: UUID da unidade "unidades", "kg"). */
@@ -49,6 +51,7 @@ public class CriarReceitaRequest {
 
   /** Tempo de preparo em minutos. */
   @PositiveOrZero(message = "Tempo de preparo deve ser zero ou positivo")
+  @Max(value = 100000, message = LimitesValores.MSG_MAX_TEMPO)
   private Integer tempoPreparoMinutos;
 
   /** Lista de ingredientes da receita. Pode ser vazia. */
@@ -63,6 +66,7 @@ public class CriarReceitaRequest {
   /** Preço de venda final definido pelo usuário. */
   @NotNull(message = "Preço final é obrigatório")
   @PositiveOrZero(message = "Preço final deve ser zero ou positivo")
+  @DecimalMax(value = LimitesValores.MAX_VALOR, message = LimitesValores.MSG_MAX_VALOR)
   private BigDecimal precoFinal;
 
   /**
@@ -76,6 +80,7 @@ public class CriarReceitaRequest {
    * porção de mousse).
    */
   @Positive(message = "Peso/volume por unidade deve ser maior que zero")
+  @DecimalMax(value = LimitesValores.MAX_QUANTIDADE, message = LimitesValores.MSG_MAX_QUANTIDADE)
   private BigDecimal pesoPorUnidade;
 
   /** Unidade do {@code pesoPorUnidade} (ex: UUID da unidade "g", "ml"). */
@@ -116,6 +121,7 @@ public class CriarReceitaRequest {
 
   /** Valor da hora de mão de obra utilizado no cálculo (R$/h). */
   @PositiveOrZero(message = "Valor da hora de mão de obra deve ser zero ou positivo")
+  @DecimalMax(value = LimitesValores.MAX_VALOR, message = LimitesValores.MSG_MAX_VALOR)
   private BigDecimal maoDeObraValorHora;
 
   /** Valor dos custos fixos utilizado (percentual ou absoluto). */

@@ -1,5 +1,6 @@
 package com.api.konditor.app.controller.request;
 
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -41,6 +42,7 @@ public class CriarIngredienteRequest {
   /** Custo por unidade base do ingrediente. Deve ser zero ou positivo. Obrigatório. */
   @NotNull(message = "Custo por unidade é obrigatório")
   @PositiveOrZero(message = "Custo por unidade deve ser zero ou positivo")
+  @DecimalMax(value = LimitesValores.MAX_VALOR, message = LimitesValores.MSG_MAX_VALOR)
   private BigDecimal precoPorUnidade;
 
   /** Notas / observações adicionais. Opcional. */

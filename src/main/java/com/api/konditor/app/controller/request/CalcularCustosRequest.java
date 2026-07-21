@@ -50,6 +50,7 @@ public class CalcularCustosRequest {
   /** Rendimento total produzido pela receita (usado para calcular custo/preço por unidade). */
   @NotNull(message = "Rendimento é obrigatório")
   @Positive(message = "Rendimento deve ser maior que zero")
+  @DecimalMax(value = LimitesValores.MAX_QUANTIDADE, message = LimitesValores.MSG_MAX_QUANTIDADE)
   private BigDecimal rendimentoQuantidade;
 
   /**
@@ -58,6 +59,7 @@ public class CalcularCustosRequest {
    */
   @NotNull(message = "Valor da hora de mão de obra é obrigatório")
   @PositiveOrZero(message = "Valor da hora deve ser zero ou positivo")
+  @DecimalMax(value = LimitesValores.MAX_VALOR, message = LimitesValores.MSG_MAX_VALOR)
   private BigDecimal maoDeObraValorHora;
 
   /**
@@ -67,6 +69,7 @@ public class CalcularCustosRequest {
    */
   @NotNull(message = "Tempo de preparo é obrigatório")
   @DecimalMin(value = "0.0", message = "Tempo de preparo deve ser zero ou positivo")
+  @DecimalMax(value = LimitesValores.MAX_TEMPO_MINUTOS, message = LimitesValores.MSG_MAX_TEMPO)
   private BigDecimal tempoPreparoMinutos;
 
   /**
@@ -75,6 +78,7 @@ public class CalcularCustosRequest {
    */
   @NotNull(message = "Valor dos custos fixos é obrigatório")
   @PositiveOrZero(message = "Valor dos custos fixos deve ser zero ou positivo")
+  @DecimalMax(value = LimitesValores.MAX_VALOR, message = LimitesValores.MSG_MAX_VALOR)
   private BigDecimal custosFixosValor;
 
   /**
@@ -108,6 +112,7 @@ public class CalcularCustosRequest {
    * calcula automaticamente o número de unidades/porções e os custos por unidade/porção.
    */
   @Positive(message = "Peso/volume por unidade deve ser maior que zero")
+  @DecimalMax(value = LimitesValores.MAX_QUANTIDADE, message = LimitesValores.MSG_MAX_QUANTIDADE)
   private BigDecimal pesoPorUnidade;
 
   /**
