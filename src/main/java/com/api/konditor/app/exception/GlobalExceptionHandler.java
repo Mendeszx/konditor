@@ -142,19 +142,50 @@ public class GlobalExceptionHandler {
   }
 
   /**
-   * Trata violações de restrição de unicidade ou integridade do banco de dados. Retorna 409
-   * Conflict para que o cliente saiba que o recurso já existe.
+   * Trata violações de integridade do banco de dados, diferenciando o tipo pelo {@code SQLState} do
+   * Postgres:
+   *
+   * <ul>
+   *   <li>{@code 23505} (unique_violation) → 409 Conflict: o recurso já existe.
+   *   <li>{@code 23502} (not_null_violation), {@code 23503} (foreign_key), {@code 23514} (check) →
+   *       500: erro interno de persistência (dado obrigatório ausente/inconsistente), não é culpa
+   *       do cliente. Evita a mensagem enganosa de "unicidade" para bugs de mapeamento (ver
+   *       KON-56).
+   * </ul>
    */
   @ExceptionHandler(DataIntegrityViolationException.class)
   public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
+    String sqlState = extrairSqlState(ex);
     log.warn(
-        "[EXCEPTION] Violação de integridade de dados: {}", ex.getMostSpecificCause().getMessage());
+        "[EXCEPTION] Violação de integridade de dados (SQLState={}): {}",
+        sqlState,
+        ex.getMostSpecificCause().getMessage());
+
+    if ("23505".equals(sqlState)) {
+      ProblemDetail detail =
+          ProblemDetail.forStatusAndDetail(
+              HttpStatus.CONFLICT, "Operação viola uma restrição de unicidade dos dados.");
+      detail.setType(URI.create("https://konditor.api/errors/data-integrity-violation"));
+      detail.setProperty("timestamp", Instant.now());
+      return detail;
+    }
+
     ProblemDetail detail =
         ProblemDetail.forStatusAndDetail(
-            HttpStatus.CONFLICT, "Operação viola uma restrição de unicidade dos dados.");
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "Não foi possível salvar os dados por uma inconsistência interna. Tente novamente.");
     detail.setType(URI.create("https://konditor.api/errors/data-integrity-violation"));
     detail.setProperty("timestamp", Instant.now());
     return detail;
+  }
+
+  /** Extrai o {@code SQLState} da causa raiz JDBC, quando disponível. */
+  private String extrairSqlState(DataIntegrityViolationException ex) {
+    Throwable causa = ex.getMostSpecificCause();
+    if (causa instanceof java.sql.SQLException sqlException) {
+      return sqlException.getSQLState();
+    }
+    return null;
   }
 
   /** Trata qualquer exceção não mapeada — retorna 500 e loga o stack trace completo. */
