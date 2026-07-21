@@ -35,7 +35,6 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>{@code GET /ingredientes/estoque} — listagem paginada com filtro por categoria
  *   <li>{@code PUT /ingredientes/estoque/{id}} — atualiza um ingrediente existente
  *   <li>{@code GET /ingredientes/estoque/resumo} — painéis de resumo (total e estoque crítico)
- *   <li>{@code GET /ingredientes/estoque/alertas-mercado} — variações de preço recentes
  *   <li>{@code GET /ingredientes/categorias} — chips de filtro por categoria
  * </ul>
  *
