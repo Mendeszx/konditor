@@ -19,8 +19,6 @@ public class Ingredient {
   private String brand;
   private Unit unit;
   private BigDecimal costPerUnit;
-  private BigDecimal stockQuantity;
-  private BigDecimal stockAlertMin;
   private String notes;
   private Instant createdAt;
   private Instant updatedAt;

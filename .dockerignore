@@ -1,0 +1,23 @@
+# Build output
+target/
+**/target/
+
+# Git
+.git/
+.gitignore
+
+# IDE / editor
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Docs e ferramentas locais (não precisam ir para o build)
+docs/
+.claude/
+memory/
+
+# Ambiente
+.env

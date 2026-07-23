@@ -16,6 +16,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class MelhorMargemResponse {
 
+  /** ID único da receita — usado pelo frontend para navegar até a análise detalhada. */
+  private String id;
+
   /** Nome da receita com maior margem de lucro. */
   private String nome;
 

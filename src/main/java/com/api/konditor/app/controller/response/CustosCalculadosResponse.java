@@ -1,6 +1,7 @@
 package com.api.konditor.app.controller.response;
 
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -33,8 +34,13 @@ import lombok.Setter;
 @Builder
 public class CustosCalculadosResponse {
 
-  /** Custo total dos ingredientes do lote. */
+  /**
+   * Custo total dos ingredientes do lote (ingredientes convencionais + receitas-como-ingrediente).
+   */
   private BigDecimal custoIngredientes;
+
+  /** Breakdown das receitas usadas como ingrediente (custo individual de cada sub-receita). */
+  private List<ReceitaComoIngredienteResponse> receitasComoIngredientes;
 
   /** Custo de mão de obra do lote = {@code maoDeObraValorHora × (tempoPreparoMinutos / 60)}. */
   private BigDecimal custoMaoDeObra;
@@ -77,4 +83,34 @@ public class CustosCalculadosResponse {
 
   /** Margem desejada utilizada no cálculo. */
   private BigDecimal margemUtilizada;
+
+  /**
+   * Número de unidades/porções calculado automaticamente quando {@code pesoPorUnidade} é informado.
+   * Fórmula: {@code rendimentoQuantidade (em unidade base) / pesoPorUnidade (em unidade base)}.
+   */
+  private BigDecimal numeroPorcoesUnidades;
+
+  /**
+   * Custo total por grama ou mililitro — disponível quando a unidade de rendimento é peso ou
+   * volume. Fórmula: {@code custoTotal / rendimentoQuantidade (convertido para base g ou ml)}.
+   */
+  private BigDecimal custoPorGramaOuMl;
+
+  /**
+   * Preço sugerido por grama ou mililitro — disponível quando a unidade de rendimento é peso ou
+   * volume. Fórmula: {@code precoSugerido / rendimentoQuantidade (convertido para base g ou ml)}.
+   */
+  private BigDecimal precoPorGramaOuMl;
+
+  /**
+   * Custo por unidade/porção — disponível quando {@code pesoPorUnidade} é informado. Fórmula:
+   * {@code custoTotal / numeroPorcoesUnidades}.
+   */
+  private BigDecimal custoPorPorcaoOuUnidade;
+
+  /**
+   * Preço sugerido por unidade/porção — disponível quando {@code pesoPorUnidade} é informado.
+   * Fórmula: {@code precoSugerido / numeroPorcoesUnidades}.
+   */
+  private BigDecimal precoPorPorcaoOuUnidade;
 }

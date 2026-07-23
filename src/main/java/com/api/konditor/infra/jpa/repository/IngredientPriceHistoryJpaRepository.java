@@ -1,6 +1,6 @@
 package com.api.konditor.infra.jpa.repository;
 
-import com.api.konditor.infra.jpa.entity.IngredientPriceHistoryJpaEntity;
+import com.api.konditor.infra.jpa.entity.HistoricoPrecoIngredienteJpaEntity;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface IngredientPriceHistoryJpaRepository
-    extends JpaRepository<IngredientPriceHistoryJpaEntity, UUID> {
+    extends JpaRepository<HistoricoPrecoIngredienteJpaEntity, UUID> {
 
   /**
    * Retorna a entrada mais recente de histórico para cada ingrediente da lista, usada para calcular
@@ -16,14 +16,14 @@ public interface IngredientPriceHistoryJpaRepository
    */
   @Query(
       """
-      SELECT ph FROM IngredientPriceHistoryJpaEntity ph
+      SELECT ph FROM HistoricoPrecoIngredienteJpaEntity ph
       WHERE ph.ingredient.id IN :ingredientIds
         AND ph.changedAt = (
             SELECT MAX(ph2.changedAt)
-            FROM IngredientPriceHistoryJpaEntity ph2
+            FROM HistoricoPrecoIngredienteJpaEntity ph2
             WHERE ph2.ingredient.id = ph.ingredient.id
         )
       """)
-  List<IngredientPriceHistoryJpaEntity> findMostRecentByIngredientIds(
+  List<HistoricoPrecoIngredienteJpaEntity> findMostRecentByIngredientIds(
       @Param("ingredientIds") List<UUID> ingredientIds);
 }

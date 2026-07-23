@@ -2,7 +2,7 @@ package com.api.konditor.app.service;
 
 import com.api.konditor.app.controller.response.GoogleAuthResponse;
 import com.api.konditor.app.controller.response.RenovarTokenResponse;
-import com.api.konditor.domain.useCase.AuthUseCase;
+import com.api.konditor.domain.usecase.AuthUseCase;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

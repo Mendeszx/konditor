@@ -2,6 +2,7 @@ package com.api.konditor.app.service;
 
 import com.api.konditor.app.controller.response.UnidadeResponse;
 import com.api.konditor.domain.enuns.UnitType;
+import com.api.konditor.infra.jpa.entity.UnidadeJpaEntity;
 import com.api.konditor.infra.jpa.repository.UnitJpaRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +52,7 @@ public class UnidadeService {
         .toList();
   }
 
-  private UnidadeResponse toResponse(com.api.konditor.infra.jpa.entity.UnitJpaEntity u) {
+  private UnidadeResponse toResponse(UnidadeJpaEntity u) {
     return UnidadeResponse.builder()
         .id(u.getId().toString())
         .nome(u.getName())

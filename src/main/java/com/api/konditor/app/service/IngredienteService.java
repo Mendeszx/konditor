@@ -2,13 +2,12 @@ package com.api.konditor.app.service;
 
 import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.request.CriarIngredienteRequest;
-import com.api.konditor.app.controller.response.AlertaMercadoItemResponse;
 import com.api.konditor.app.controller.response.CategoriaIngredienteResponse;
 import com.api.konditor.app.controller.response.IngredienteCardResponse;
 import com.api.konditor.app.controller.response.IngredienteResponse;
 import com.api.konditor.app.controller.response.IngredienteResumoResponse;
 import com.api.konditor.app.controller.response.PaginaResponse;
-import com.api.konditor.domain.useCase.IngredienteUseCase;
+import com.api.konditor.domain.usecase.IngredienteUseCase;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -40,12 +39,6 @@ public class IngredienteService {
         "[INGREDIENTE-SERVICE] Delegando resumo ao use case. workspaceId={}",
         usuario.workspaceId());
     return ingredienteUseCase.resumo(usuario);
-  }
-
-  public List<AlertaMercadoItemResponse> alertasMercado(UsuarioAutenticado usuario) {
-    log.debug(
-        "[INGREDIENTE-SERVICE] Delegando alertas de mercado ao use case. userId={}", usuario.id());
-    return ingredienteUseCase.alertasMercado(usuario);
   }
 
   public List<CategoriaIngredienteResponse> listarCategorias(UsuarioAutenticado usuario) {

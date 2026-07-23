@@ -2,7 +2,7 @@ package com.api.konditor.app.service;
 
 import com.api.konditor.domain.enuns.Plan;
 import com.api.konditor.domain.enuns.Role;
-import com.api.konditor.infra.jpa.entity.UserJpaEntity;
+import com.api.konditor.infra.jpa.entity.UsuarioJpaEntity;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -36,11 +36,24 @@ public class JwtService {
   private final SecretKey signingKey;
   private final long expiracaoEmSegundos;
 
+  /** Segredo de desenvolvimento público (commitado em .env.example/docker-compose). */
+  private static final String SEGREDO_DEV_PUBLICO = "dev-secret-change-me-please-min-32-chars!";
+
   public JwtService(
       @Value("${security.jwt.secret}") String secret,
       @Value("${security.jwt.expiration-seconds:900}") long expiracaoEmSegundos) {
-    if (secret == null || secret.length() < 32) {
+    if (secret == null || secret.isBlank()) {
+      throw new IllegalStateException(
+          "JWT_SECRET não definida. Configure a variável de ambiente JWT_SECRET com um segredo"
+              + " forte de no mínimo 32 caracteres — a aplicação não sobe sem ela.");
+    }
+    if (secret.length() < 32) {
       throw new IllegalStateException("security.jwt.secret deve ter no mínimo 32 caracteres");
+    }
+    if (SEGREDO_DEV_PUBLICO.equals(secret)) {
+      log.warn(
+          "[SECURITY] JWT_SECRET está usando o segredo de DESENVOLVIMENTO público do repositório."
+              + " Aceitável apenas em ambiente local — NUNCA use este valor em produção.");
     }
     this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     this.expiracaoEmSegundos = expiracaoEmSegundos;
@@ -55,7 +68,7 @@ public class JwtService {
    * @param plan plano do workspace
    */
   public record ContextoToken(
-      UserJpaEntity usuario, String workspaceId, Role workspaceRole, Plan plan) {}
+      UsuarioJpaEntity usuario, String workspaceId, Role workspaceRole, Plan plan) {}
 
   /**
    * Gera um JWT assinado com as claims do usuário e do workspace ativo.
@@ -68,7 +81,7 @@ public class JwtService {
     return Jwts.builder()
         .subject(String.valueOf(contexto.usuario().getId()))
         .claim("email", contexto.usuario().getEmail())
-        .claim("name", contexto.usuario().getName())
+        .claim("name", contexto.usuario().getNome())
         .claim("workspaceId", contexto.workspaceId())
         .claim("workspaceRole", contexto.workspaceRole().name())
         .claim("plan", contexto.plan().name())
@@ -88,12 +101,12 @@ public class JwtService {
    * @param usuario entidade JPA do usuário recém-criado
    * @return token JWT compacto assinado, sem claims de workspace
    */
-  public String gerarTokenOnboarding(UserJpaEntity usuario) {
+  public String gerarTokenOnboarding(UsuarioJpaEntity usuario) {
     Instant agora = Instant.now();
     return Jwts.builder()
         .subject(String.valueOf(usuario.getId()))
         .claim("email", usuario.getEmail())
-        .claim("name", usuario.getName())
+        .claim("name", usuario.getNome())
         .claim("onboarding", true)
         .issuedAt(Date.from(agora))
         .expiration(Date.from(agora.plusSeconds(expiracaoEmSegundos)))

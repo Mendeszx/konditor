@@ -45,10 +45,4 @@ public class IngredienteCardResponse {
    * aumento. {@code null} se não há histórico.
    */
   private BigDecimal variacaoPreco;
-
-  /** Quantidade atual em estoque. {@code null} se o estoque não é controlado. */
-  private BigDecimal estoque;
-
-  /** {@code true} quando {@code estoque < stockAlertMin}. */
-  private boolean estoqueCritico;
 }

@@ -2,7 +2,6 @@ package com.api.konditor.app.controller;
 
 import com.api.konditor.app.config.security.UsuarioAutenticado;
 import com.api.konditor.app.controller.request.CriarIngredienteRequest;
-import com.api.konditor.app.controller.response.AlertaMercadoItemResponse;
 import com.api.konditor.app.controller.response.CategoriaIngredienteResponse;
 import com.api.konditor.app.controller.response.IngredienteCardResponse;
 import com.api.konditor.app.controller.response.IngredienteResponse;
@@ -35,8 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>{@code POST /ingredientes/estoque} — cria um novo ingrediente
  *   <li>{@code GET /ingredientes/estoque} — listagem paginada com filtro por categoria
  *   <li>{@code PUT /ingredientes/estoque/{id}} — atualiza um ingrediente existente
- *   <li>{@code GET /ingredientes/estoque/resumo} — painéis de resumo (total e estoque crítico)
- *   <li>{@code GET /ingredientes/estoque/alertas-mercado} — variações de preço recentes
+ *   <li>{@code GET /ingredientes/estoque/resumo} — painéis de resumo (total de ingredientes)
  *   <li>{@code GET /ingredientes/categorias} — chips de filtro por categoria
  * </ul>
  *
@@ -147,7 +145,7 @@ public class IngredienteController {
 
   /**
    * Retorna os dados agregados para os painéis de resumo da tela: total de ingredientes cadastrados
-   * e quantidade em estoque crítico.
+   * e ativos no workspace.
    *
    * @return 200 OK com os dados de resumo
    */
@@ -156,26 +154,8 @@ public class IngredienteController {
       @AuthenticationPrincipal UsuarioAutenticado usuario) {
     log.info("[INGREDIENTE] GET /estoque/resumo — workspaceId={}", usuario.workspaceId());
     IngredienteResumoResponse response = ingredienteService.resumo(usuario);
-    log.info(
-        "[INGREDIENTE] Resumo — total={} critico={}",
-        response.getTotalIngredientes(),
-        response.getEstoqueCritico());
+    log.info("[INGREDIENTE] Resumo — total={}", response.getTotalIngredientes());
     return ResponseEntity.ok(response);
-  }
-
-  /**
-   * Retorna as variações de preço recentes para o painel de Alerta de Mercado.
-   *
-   * <p>Os dados são parcialmente mockados até que a integração com fornecedores externos esteja
-   * disponível.
-   *
-   * @return 200 OK com a lista de alertas de variação de preço
-   */
-  @GetMapping("/estoque/alertas-mercado")
-  public ResponseEntity<List<AlertaMercadoItemResponse>> alertasMercado(
-      @AuthenticationPrincipal UsuarioAutenticado usuario) {
-    log.info("[INGREDIENTE] GET /estoque/alertas-mercado — userId={}", usuario.id());
-    return ResponseEntity.ok(ingredienteService.alertasMercado(usuario));
   }
 
   /**
