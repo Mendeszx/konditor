@@ -309,8 +309,6 @@ create table ingredientes (
   categoria_id          uuid references categorias_ingrediente(id) on delete set null,
 
   custo_por_unidade     numeric not null,
-  quantidade_estoque    numeric,
-  alerta_minimo_estoque numeric,
 
   notas         text,
   criado_em     timestamptz not null default now(),

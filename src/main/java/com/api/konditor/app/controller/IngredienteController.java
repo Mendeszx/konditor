@@ -34,7 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>{@code POST /ingredientes/estoque} — cria um novo ingrediente
  *   <li>{@code GET /ingredientes/estoque} — listagem paginada com filtro por categoria
  *   <li>{@code PUT /ingredientes/estoque/{id}} — atualiza um ingrediente existente
- *   <li>{@code GET /ingredientes/estoque/resumo} — painéis de resumo (total e estoque crítico)
+ *   <li>{@code GET /ingredientes/estoque/resumo} — painéis de resumo (total de ingredientes)
  *   <li>{@code GET /ingredientes/categorias} — chips de filtro por categoria
  * </ul>
  *
@@ -145,7 +145,7 @@ public class IngredienteController {
 
   /**
    * Retorna os dados agregados para os painéis de resumo da tela: total de ingredientes cadastrados
-   * e quantidade em estoque crítico.
+   * e ativos no workspace.
    *
    * @return 200 OK com os dados de resumo
    */
