@@ -1,2 +1,7 @@
+# Normaliza fim de linha: todo arquivo de texto é guardado como LF no repo.
+* text=auto eol=lf
+
+# Overrides
 /mvnw text eol=lf
 *.cmd text eol=crlf
+*.bat text eol=crlf
